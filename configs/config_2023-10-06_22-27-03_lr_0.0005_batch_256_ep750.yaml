@@ -1,0 +1,18 @@
+batch_size: 256
+dataset_names:
+- cub200
+epochs: 750
+feature_sizes:
+- 16
+- 32
+- 64
+- 128
+- 256
+- 512
+- 1024
+- 2048
+learning_rate: 0.0005
+seed_value: 42
+start_time: 2023-10-06_22-27-03
+use_early_stopping: false
+weight_decay: 2.0e-05
