@@ -23,9 +23,12 @@ import matplotlib.pyplot as plt
 # from utils.gallery import extract_gallery_features
 from utils.similarities import evaluate_on_retrieval
 from utils.features_unittest import TestFeatureSize
+from utils.debugging_functions import create_subset_data
 import numpy as np
 import random
 
+# for debugging
+from torch.utils.data import Subset
 
 
 def main_resnet():
@@ -126,8 +129,6 @@ def main_resnet():
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed_value)
  
-
- 
     # Create dictionaries to store metrics
     metrics_cub200_finetuning = {}
     metrics_cub200_retrieval = {}
@@ -143,7 +144,7 @@ def main_resnet():
     # lr=0.1
 
     weight_decay=2e-05
-
+    DEBUG_MODE = True
     use_early_stopping=True
 
     # use_early_stopping=True
@@ -160,11 +161,19 @@ def main_resnet():
     print(f"You are using epochs: {epochs}")
     print(f"You are using early stopping: {use_early_stopping}")
     print("/\\"*30)
+    
 
     #### get data #####root, batch_size=32,num_workers=10   
     dataloadercub200 = DataLoaderCUB200(data_root, batch_size=batch_size, num_workers=10)
-    trainloader_cub200, testloader_cub200 = dataloadercub200.get_dataloaders()
     num_classes_cub200 = dataloadercub200.get_number_of_classes()
+    if DEBUG_MODE:
+        # create small subset of data to make debuggin faster
+        trainloader_cub200_dump, testloader_cub200_dump = dataloadercub200.get_dataloaders()
+        trainloader_cub200, testloader_cub200 = create_subset_data(trainloader_cub200_dump, testloader_cub200_dump, batch_size=32)
+    else:
+        trainloader_cub200, testloader_cub200 = dataloadercub200.get_dataloaders()
+    
+
     #### prep logger ####
     
     # Initializing metrics logger for later use in logging metrics
@@ -178,6 +187,7 @@ def main_resnet():
 
     #### feature sizes #####
     # feature_sizes = [16]
+    # feature_sizes = [2048]
     feature_sizes = [8]#, 16, 32, 64, 128, 256, 512, 1024, 2048]
     # feature_sizes = [16]#, 32, 64, 128, 256, 512, 1024, 2048]
 
@@ -281,14 +291,6 @@ def main_resnet():
                 print("Optimizer is None")
                 pass
 
-
-        # Training CUB-200
-        # model_cub200, train_loss_cub200, training_accuracy_cub200, val_loss_cub200, val_acc_cub200 = train_and_evaluate("CUB-200", model, optimizer, lr,
-        #                                                             criterion, trainloader_cub200, 
-        #                                                             testloader_cub200, use_early_stopping,
-        #                                                             device, num_classes_cub200, metrics_logger,
-        #                                                             epochs, feature_size, save_dir)        
-        # with scheduler
 
         model_cub200, train_loss_cub200, training_accuracy_cub200, val_loss_cub200, val_acc_cub200 = train_and_evaluate("CUB-200", model, optimizer, scheduler_var, lr,
                                                                       criterion, trainloader_cub200, 
