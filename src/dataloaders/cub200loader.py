@@ -59,7 +59,7 @@ class DataLoaderCUB200:
             v2.RandomHorizontalFlip(),
             v2.TrivialAugmentWide(),            
             # v2.CutMix(cutmix_alpha=1.0, num_classes=200),
-            v2.ToTensor(),
+            v2.ToTensor(), 
             v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
         # # new strategy

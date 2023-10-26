@@ -14,7 +14,7 @@ from models.resnet50_vanilla import ResNet50_vanilla
 from optimizers.sgd_var_lr_test import SGDOptimizerVariableLR
 from optimizers.adam import AdamOptimizer
 from optimizers.adam_lr_var_test import AdamOptimizerVar
-from schedulers.cosine import CosineAnnealingLRWrapper, CustomCosineAnnealingWarmUpLR, CosineScheduler
+from schedulers.cosine import CosineAnnealingLRWrapper, CosineAnnealingLRWrapperWithWarmup
 from trainers.vanilla_trainer_resnet50 import ResnetTrainer_test
 from loss.ce import CustomCrossEntropyLoss
 
@@ -61,8 +61,8 @@ def main_resnet_test():
         scheduler = CosineAnnealingLRWrapper(optimizer, T_max, eta_min=eta_min)
         return scheduler
     
-    def create_scheduler_cosw(optimizer, lr_warmup_epochs, lr_warmup_decay, T_max, last_epoch=-1):
-        scheduler = CustomCosineAnnealingWarmUpLR(optimizer, lr_warmup_epochs, lr_warmup_decay, T_max, last_epoch)
+    def create_scheduler_cosw(optimizer, T_max=100, warmup_epochs=20, warmup_decay="cosine"):
+        scheduler = CosineAnnealingLRWrapperWithWarmup(optimizer, T_max=100, warmup_epochs=20, warmup_decay="cosine")
         return scheduler    
     
     
@@ -115,7 +115,7 @@ def main_resnet_test():
     use_early_stopping=True
 
     # use_early_stopping=True
-    lr_warmup_epochs=20 
+    warmup_epochs=20 
     lr_warmup_decay=0.01 
     # lr_warmup_decay=0.3
 
@@ -139,7 +139,7 @@ def main_resnet_test():
     else:
         trainloader_cub200, testloader_cub200 = dataloadercub200.get_dataloaders()
 
-    
+    num_classes_cub200 = dataloadercub200.get_number_of_classes()    
 
 
  
@@ -153,23 +153,19 @@ def main_resnet_test():
 
 
     # scheduler = create_scheduler_cos(optimizer, epochs, lr)
-    scheduler_var = create_scheduler_cos(optimizer, T_max,  eta_min=0)
-    # scheduler_var = create_scheduler_cosw(optimizer, lr_warmup_epochs, lr_warmup_decay, T_max, last_epoch=-1)    
+    # scheduler_var = create_scheduler_cos(optimizer, T_max,  eta_min=0)
+    scheduler_var = create_scheduler_cosw(optimizer, T_max, warmup_epochs, warmup_decay="cosine")    
 
-
-    # scheduler = CosineScheduler(20, warmup_steps=5, base_lr=0.3, final_lr=0.01)
-    # scheduler_var = CosineScheduler(optimizer, max_update=20, base_lr=0.8, final_lr=0.01)
-    # d2l.plot(torch.arange(num_epochs), [scheduler(t) for t in range(num_epochs)])# d2l.plot(torch.arange(num_epochs), [scheduler(t) for t in range(num_epochs)])
 
     print(f"The model is still on device: {next(model.parameters()).device}")
 
-    trainer = ResnetTrainer_test(model, criterion, optimizer, device, use_early_stopping, scheduler_var)    
+    trainer = ResnetTrainer_test(model, criterion, optimizer, num_classes_cub200, device, use_early_stopping, scheduler_var)    
     fine_tuned_model = trainer.train(trainloader_cub200, testloader_cub200, epochs)
     # Plot the training and validation losses and accuracies
     fig1 = trainer.plot_loss_vs_epoch()
     fig2 = trainer.plot_acc_vs_epoch()
-    fig1.savefig(f'vanila_test_loss_vs_epoch_scheduler_Adam_lr_cos_batch_size_{batch_size}_lr_{lr}_epochs_{epochs}.png')
-    fig2.savefig(f'vanila_test_acc_vs_epoch_scheduler_Adam_lr__cos_batch_size_{batch_size}_lr_{lr}_epochs_{epochs}.png')    
+    fig1.savefig(f'vanila_test_loss_vs_epoch_scheduler_Adam_lr_cos_warmup_batch_size_{batch_size}_lr_{lr}_epochs_{epochs}.png')
+    fig2.savefig(f'vanila_test_acc_vs_epoch_scheduler_Adam_lr__cos_warmup_batch_size_{batch_size}_lr_{lr}_epochs_{epochs}.png')    
 
 
 
