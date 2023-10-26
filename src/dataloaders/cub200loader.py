@@ -5,6 +5,26 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from torchvision.transforms import v2 
 # import Cutmix
+# import torchvision.transforms.functional as TF
+
+
+# preserve dimensions of images
+# def pad(img, size_max=500):
+#     """
+#     Pads images to the specified size (height x width). 
+#     """
+#     pad_height = max(0, size_max - img.height)
+#     pad_width = max(0, size_max - img.width)
+    
+#     pad_top = pad_height // 2
+#     pad_bottom = pad_height - pad_top
+#     pad_left = pad_width // 2
+#     pad_right = pad_width - pad_left
+    
+#     return TF.pad(
+#         img,
+#         (pad_left, pad_top, pad_right, pad_bottom),
+#         fill=tuple(map(lambda x: int(round(x * 256)), (0.485, 0.456, 0.406))))
 
 
 class DataLoaderCUB200:
@@ -31,13 +51,13 @@ class DataLoaderCUB200:
         #     v2.TrivialAugmentWide(num_magnitude_bins=31), # how intense 
         #     v2.ToTensor() # use ToTensor() last to get everything between 0 & 1
         # ])
-       
+
         self.train_transform = v2.Compose([
+            # v2.Lambda(pad),
             v2.Resize(256),
             v2.RandomResizedCrop(224),
             v2.RandomHorizontalFlip(),
             v2.TrivialAugmentWide(),            
-            # v2.CenterCrop(224),
             # v2.CutMix(cutmix_alpha=1.0, num_classes=200),
             v2.ToTensor(),
             v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -54,9 +74,11 @@ class DataLoaderCUB200:
 
 
         self.test_transform = transforms.Compose([
-            transforms.Resize((224, 224)),  # Resize images to the size expected by ResNet50
-            transforms.ToTensor(),  # Convert PIL image to Tensor
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),  # Normalize to ImageNet stats
+            # v2.Lambda(pad),
+            v2.Resize((224, 224)),  # Resize images to the size expected by ResNet50
+            v2.CenterCrop(256),  # Center crop the image
+            v2.ToTensor(),
+            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ])
 
         self.train_dataset = Cub2011(self.data_root, train=True, download=False, transform=self.train_transform)

@@ -4,25 +4,25 @@ print(sys.path)
 import torch
 import torch.nn as nn
 import os
-# from dataloaders.cifar10 import DataLoaderCIFAR10
-from exp_logging.metricsLogger import MetricsLogger
 from torchvision.models import resnet50, ResNet50_Weights
 from datetime import datetime
 import yaml
 from dataloaders.cub200loader import DataLoaderCUB200
 # from utils.metrics import calculate_map, calculate_recall_at_k
 import models.resnet50 as resnet50
+from utils.debugging_functions import create_subset_data
+from exp_logging.metricsLogger import MetricsLogger
 
-from optimizers.adam import AdamOptimizer
-from optimizers.adam_lr_var import AdamOptimizerVar
-from trainers.resnets_trainer import ResnetTrainer
-from loss.ce import CustomCrossEntropyLoss
-import matplotlib.pyplot as plt
 # from utils.gallery import extract_gallery_features
-from utils.similarities import evaluate_on_retrieval
+# from utils.similarities import evaluate_on_retrieval
+from tests.similarities_debug import evaluate_on_retrieval
 from utils.features_unittest import TestFeatureSize
 import numpy as np
 import random
+
+# src/tests/similarties_debug.py
+# /home/alabutaleb/Desktop/myprojects/compression_retrieval_proj/mvp/src/tests/similarties_debug.py
+
 
 
 def main_resnet():
@@ -82,22 +82,29 @@ def main_resnet():
     print("/\\"*30)
 
     #### get data #####root, batch_size=32,num_workers=10   
+    DEBUG_MODE = False
+
+
+    #### get data #####root, batch_size=32,num_workers=10   
     dataloadercub200 = DataLoaderCUB200(data_root, batch_size=batch_size, num_workers=10)
-    trainloader_cub200, testloader_cub200 = dataloadercub200.get_dataloaders()
     num_classes_cub200 = dataloadercub200.get_number_of_classes()
-    #### prep logger ####
+
+    if DEBUG_MODE:
+        # create small subset of data to make debuggin faster
+        trainloader_cub200_dump, testloader_cub200_dump = dataloadercub200.get_dataloaders()
+        trainloader_cub200, testloader_cub200 = create_subset_data(trainloader_cub200_dump, testloader_cub200_dump, batch_size=32)
+    else:
+        trainloader_cub200, testloader_cub200 = dataloadercub200.get_dataloaders()
+
 
     # Initializing metrics logger for later use in logging metrics
     dataset_names=["cub200"]
 
-    metrics_logger = MetricsLogger()
 
-    #### get loss for fine tuning #####
-    criterion = CustomCrossEntropyLoss()
 
     #### feature sizes #####
     # feature_sizes = [16, 32, 64, 128, 256, 512, 1024, 2048]
-    feature_sizes = [16]
+    feature_sizes = [2048]
     # Get current date and time
 
     current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

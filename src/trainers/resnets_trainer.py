@@ -16,17 +16,6 @@ class ResnetTrainer():
                  epochs=10, dataset_name=None):
              
 
-        """
-        Initializes the Trainer class with the necessary components to train the model.
-
-        Parameters:
-        - model: The neural network model to be trained
-        - optimizer: The optimizer to be used during training
-        - criterion: The loss function
-        - trainloader: DataLoader providing the training data
-        - device: The device (cpu or cuda) where the computations will take place
-        - epochs: The number of epochs to train the model
-        """
         self.model = model
         
         self.metrics_logger = metrics_logger
@@ -47,40 +36,24 @@ class ResnetTrainer():
         self.device = device
         self.actual_epochs_run = 0
         self.min_epochs_for_early_stopping = 15
-
-        if self.device==None:
-            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        else:
+        if device:
             self.device = device
+        else:
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
         self.model.to(self.device)
         self.metric.to(self.device)
         self.metric_eval.to(self.device)
        
        
-        # if self.use_early_stopping:
-        #     self.min_val_loss = float('inf')  # Initialize minimum validation loss to infinity
-        #     self.patience = 3  # Number of epochs to wait before stopping
-        #     self.counter = 0  # Counter to keep track of epochs since an improvement in validation loss
-
         if self.use_early_stopping:
             self.max_val_accuracy = 0.0  # Initialize maximum validation accuracy to 0
             self.patience = 20 #3  # Number of epochs to wait before stopping
 
             self.counter = 0  # Counter to keep track of epochs since an improvement in validation accuracy
 
-    
-    # def check_early_stopping(self, avg_val_loss, counter, patience):
-    #     if avg_val_loss < self.min_val_loss:
-    #         self.min_val_loss = avg_val_loss
-    #         self.counter = 0  # Reset counter
-    #     else:
-    #         self.counter += 1
-    #         if self.counter >= self.patience:
-    #             print(f"Early stopping triggered at epoch:{self.actual_epochs_run}.")
-    #             # print(f"size of {len(self.training_loss_list)=}")
-    #             return True  # Stop training
-    #     return False  # Continue training
+
 
     def check_early_stopping(self, avg_val_accuracy, counter, patience):
         if self.actual_epochs_run < self.min_epochs_for_early_stopping:
@@ -100,15 +73,7 @@ class ResnetTrainer():
         return False  # Continue training
 
     def train_model(self):
-        """
-        This method trains the given model using the specified optimizer and criterion
-        on the data provided by trainloader for a number of epochs.
-
-        Returns:
-        - trained_model: The trained model
-        - training_loss: List containing training loss for each epoch
-        - training_accuracy: List containing training accuracy for each epoch
-        """
+ 
         self.accumulated_val_losses = []
         self.accumulated_val_accuracies = []
         self.training_accuracy = []  # Initialize a list to store the training accuracy per epoch
@@ -137,8 +102,6 @@ class ResnetTrainer():
                 # self.metric(outputs.softmax(dim=-1), labels)
                 batch_accuracies.append(acc.item() * 100)  # Storing batch-wise accuracy
 
-                # if (batch_idx + 1) % 30 == 0:
-                #     print(f'Step [{batch_idx+1}/{total_batches}], Training Loss: {loss.item():.4f}, Training Accuracy: {acc.item()*100:.2f}%')
             if self.scheduler is not None:
                 self.scheduler.step()
                 
@@ -153,11 +116,7 @@ class ResnetTrainer():
             self.training_accuracy.append(epoch_accuracy)
             self.actual_epochs_run += 1
 
-            # if self.use_early_stopping:
-            #     stop_training = self.check_early_stopping(average_validation_loss, self.counter, self.patience)
-            #     if stop_training:
-            #         break  # Stop training
-                            # ...
+
             if self.use_early_stopping:
                 stop_training = self.check_early_stopping(average_validation_accuracy, self.counter, self.patience)
                 if stop_training:
@@ -208,35 +167,21 @@ class ResnetTrainer():
                 # add up loss for each batch, running_loss will be just a float at the end of the for loop
                 # accumulate loss for each batch
                 running_loss += loss.item()
-                # predicted = torch.argmax(outputs, dim=1)
-                # Calculate accuracy for this batch
-                # correct_this_batch = (predicted == labels).sum().item()
-                # total_this_batch = labels.size(0)
-                # accuracy_this_batch = 100 * correct_this_batch / total_this_batch
-                # accuracy_over_batch.append(accuracy_this_batch)
-                # Calculating accuracy using torchmetrics inside the loop for each batch
+
                 self.metric_eval(outputs.softmax(dim=-1), labels)
                 # batch_accuracies.append(acc_val.item() * 100)  # Storing val batch-wise accuracy
                 # Clone metric object and compute for this batch
                 metric_clone = self.metric_eval.clone()
                 accuracy_this_batch = metric_clone.compute().item() * 100  # Note: this assumes the metric is between 0 and 1
 
-                # Progress display every 10% of total_batches
-                # if (batch_idx + 1) % tenth_of_batches == 0:
-                #     print(f'Step [{batch_idx+1}/{total_batches}], Validation Loss: {loss.item():.4f}, Validation Accuracy: {accuracy_this_batch:.2f}%')
-
+                
             # Compute the accumulated metrics
             epoch_accuracy_eval = self.metric_eval.compute().item() * 100
             avg_loss_over_batch = running_loss / total_batches
             
-            # print(f'Val Epoch, Validation Loss: {avg_loss_over_batch.item():.4f}, Validation Accuracy: {epoch_accuracy_eval:.2f}%')
             print(f'Val Epoch, Validation Loss: {avg_loss_over_batch:.4f}, Validation Accuracy: {epoch_accuracy_eval:.2f}%')
 
-        # avg_loss_over_batch is the loss over all batches, so this should be one number!
-        # epoch_accuracy_eval = self.metric_eval.compute().item() * 100  # Compute the accumulated accuracy
-
         avg_loss_over_batch = running_loss / total_batches
-        # accuracy_over_epoch = sum(accuracy_over_batch)/len(accuracy_over_batch)
 
         # accuracy_over_epoch should be a 
         return avg_loss_over_batch, epoch_accuracy_eval  # Return the list of batch losses

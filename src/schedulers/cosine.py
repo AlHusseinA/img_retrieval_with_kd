@@ -25,20 +25,6 @@ class CosineAnnealingLRWrapper:
         return self.scheduler.get_lr()
 
 
-# class CustomCosineAnnealingWarmUpLR(_LRScheduler):
-#     def __init__(self, optimizer, T_max, lr_warmup_epochs, lr_warmup_decay, last_epoch=-1):
-#         super(CustomCosineAnnealingWarmUpLR, self).__init__(optimizer, last_epoch)
-#         self.lr_warmup_epochs = lr_warmup_epochs
-#         self.lr_warmup_decay = lr_warmup_decay
-#         self.T_max = T_max
-
-#     def get_lr(self):
-#         if self.last_epoch < self.lr_warmup_epochs:
-#             return [(base_lr * self.last_epoch / self.lr_warmup_epochs + self.lr_warmup_decay) for base_lr in self.base_lrs]
-        
-#         else:
-#             return [base_lr * (0.5 * (1 + math.cos(math.pi * (self.last_epoch - self.lr_warmup_epochs) / (self.T_max - self.lr_warmup_epochs)))) for base_lr in self.base_lrs]
-
 
 class CustomCosineAnnealingWarmUpLR:
     def __init__(self, optimizer, lr_warmup_epochs, lr_warmup_decay, T_max, last_epoch=-1):

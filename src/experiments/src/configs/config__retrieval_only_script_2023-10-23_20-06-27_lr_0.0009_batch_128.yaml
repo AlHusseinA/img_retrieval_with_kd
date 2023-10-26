@@ -3,7 +3,7 @@ dataset_names:
 - cub200
 epochs: 1
 feature_sizes:
-- 16
-learning_rate: 0.001
+- 2048
+learning_rate: 0.0009
 seed_value: 42
-start_time: 2023-10-06_12-49-38
+start_time: 2023-10-23_20-06-27
