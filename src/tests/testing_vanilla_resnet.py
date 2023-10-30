@@ -101,7 +101,7 @@ def main_resnet_test():
     batch_size  = 256
     # epochs = 1000 #1 # 500
     epochs = 1000
-    lr=0.00001
+    lr=0.000012
     # lr=0.5
     # lr=0.1
     print(f"Learning rate: {lr}")
@@ -154,8 +154,8 @@ def main_resnet_test():
 
     # scheduler = create_scheduler_cos(optimizer, epochs, lr)
     # scheduler_var = create_scheduler_cos(optimizer, T_max,  eta_min=0)
-    scheduler_var = create_scheduler_cosw(optimizer, T_max, warmup_epochs, warmup_decay="cosine")    
-
+    # scheduler_var = create_scheduler_cosw(optimizer, T_max, warmup_epochs, warmup_decay="cosine")    
+    scheduler_var = create_scheduler_cosw(optimizer, T_max, warmup_epochs, warmup_decay="cosine") 
 
     print(f"The model is still on device: {next(model.parameters()).device}")
 
@@ -164,8 +164,8 @@ def main_resnet_test():
     # Plot the training and validation losses and accuracies
     fig1 = trainer.plot_loss_vs_epoch()
     fig2 = trainer.plot_acc_vs_epoch()
-    fig1.savefig(f'vanila_test_loss_vs_epoch_scheduler_Adam_lr_cos_warmup_batch_size_{batch_size}_lr_{lr}_epochs_{epochs}.png')
-    fig2.savefig(f'vanila_test_acc_vs_epoch_scheduler_Adam_lr__cos_warmup_batch_size_{batch_size}_lr_{lr}_epochs_{epochs}.png')    
+    fig1.savefig(f'vanila_test_loss_vs_epoch_scheduler_Adam_cos_warmup_batch_size_{batch_size}_lr_{lr}_epochs_{epochs}.png')
+    fig2.savefig(f'vanila_test_acc_vs_epoch_scheduler_Adam_cos_warmup_batch_size_{batch_size}_lr_{lr}_epochs_{epochs}.png')    
 
 
 
