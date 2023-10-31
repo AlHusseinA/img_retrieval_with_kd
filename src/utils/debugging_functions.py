@@ -15,6 +15,6 @@ def create_subset_data(trainloader_cub200, testloader_cub200, batch_size=32):
     trainloader_small = DataLoader(train_subset, batch_size=batch_size, num_workers=10)
     testloader_small = DataLoader(test_subset, batch_size=batch_size, num_workers=10)
 
-    return trainloader_small, testloader_small
+    return trainloader_small, testloader_small, batch_size
 
 

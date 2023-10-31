@@ -101,7 +101,7 @@ def main_resnet_test():
     batch_size  = 256
     # epochs = 1000 #1 # 500
     epochs = 1000
-    lr=0.000012
+    lr=0.00001
     # lr=0.5
     # lr=0.1
     print(f"Learning rate: {lr}")

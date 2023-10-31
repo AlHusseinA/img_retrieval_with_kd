@@ -1,0 +1,11 @@
+batch_size: 128
+dataset_names:
+- cub200
+epochs: 1
+feature_sizes:
+- 8
+learning_rate: 0.0003
+seed_value: 42
+start_time: 2023-10-23_15-51-31
+use_early_stopping: true
+weight_decay: 2.0e-05

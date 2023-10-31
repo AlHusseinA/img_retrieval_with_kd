@@ -123,8 +123,10 @@ class ResnetTrainer():
                     break  # Stop training
 
             # self.training_loss.append(training_loss / len(self.trainloader.dataset))
-            print(f'Epoch {epoch+1}, Training Loss: {training_loss / len(self.trainloader):.4f}, Training Accuracy: {epoch_accuracy:.4f}%')
-         
+            # print(f'Epoch {epoch+1}, Training Loss: {training_loss / len(self.trainloader):.4f}, Training Accuracy: {epoch_accuracy:.4f}%')
+            print(f'Epoch {epoch + 1}, Training Loss: {training_loss / len(self.trainloader):.4f}, Training Accuracy: {epoch_accuracy:.4f}, Validation Loss: {average_validation_loss:.4f}, Validation Accuracy: {average_validation_accuracy}')
+
+
             if self.metrics_logger is not None:
                 try:
                     self.metrics_logger.log_metrics(self.feature_size, self.actual_epochs_run, training_loss, self.training_accuracy, average_validation_loss, average_validation_accuracy, self.dataset_name, self.log_save_path, self.lr)
@@ -205,7 +207,7 @@ class ResnetTrainer():
             plt.ylabel(ylabel)
             plt.title(f'Training and Testing {metric_name} over Epochs - {plot_id}')
             plt.legend()
-            plt.savefig(f"{metric_name}_{plot_id}.png")
+            plt.savefig(f"{self.log_save_path}_{metric_name}_{plot_id}.png")
             # plt.show()
 
 
