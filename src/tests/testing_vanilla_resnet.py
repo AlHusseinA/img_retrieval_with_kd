@@ -139,7 +139,7 @@ def main_resnet_test():
     else:
         trainloader_cub200, testloader_cub200 = dataloadercub200.get_dataloaders()
 
-    num_classes_cub200 = dataloadercub200.get_number_of_classes()    
+    # num_classes_cub200 = dataloadercub200.get_number_of_classes()    
 
 
  
@@ -161,6 +161,14 @@ def main_resnet_test():
 
     trainer = ResnetTrainer_test(model, criterion, optimizer, num_classes_cub200, device, use_early_stopping, scheduler_var)    
     fine_tuned_model = trainer.train(trainloader_cub200, testloader_cub200, epochs)
+    
+    # metrics_logger.log_and_calculate_metrics(dataset_name, feature_size, model, testloader, last_training_loss, device)
+
+
+
+    # After all experiments, plot the metrics using the metrics logger
+    # metrics_logger.plot_metrics()
+    
     # Plot the training and validation losses and accuracies
     fig1 = trainer.plot_loss_vs_epoch()
     fig2 = trainer.plot_acc_vs_epoch()

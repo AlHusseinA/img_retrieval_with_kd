@@ -22,6 +22,7 @@ from loss.ce import CustomCrossEntropyLoss
 import matplotlib.pyplot as plt
 # from utils.gallery import extract_gallery_features
 from utils.similarities import evaluate_on_retrieval
+from utils.helper_functions import plot_multiple_metrics
 from utils.features_unittest import TestFeatureSize
 from utils.debugging_functions import create_subset_data
 import numpy as np
@@ -146,9 +147,10 @@ def main_resnet():
            
     #### hyperparameters #####
     batch_size  = 256
-    epochs = 7500
+    epochs = 500
     # epochs = 750
     lr=0.00001      # lr=0.5
+    
     # lr=0.1
 
     weight_decay=2e-05
@@ -250,12 +252,15 @@ def main_resnet():
                                                                       device, num_classes_cub200, metrics_logger,
                                                                       epochs, feature_size, save_dir,log_save_path)  
               
-        metrics_cub200_finetuning[feature_size] = {'train_loss': train_loss_cub200, 'train_acc': training_accuracy_cub200, 
-                                        'val_loss': val_loss_cub200, 'val_acc': val_acc_cub200}
+        # metrics_cub200_finetuning[feature_size] = {'train_loss': train_loss_cub200, 'train_acc': training_accuracy_cub200, 
+        #                                 'val_loss': val_loss_cub200, 'val_acc': val_acc_cub200}
         
         # print(f"\nClassification validation accuracy for CUB-200: {metrics_cub200_finetuning[feature_size]['val_acc']}")
         print(f"Finetuning model with feature size: {feature_size} is complete!\n") 
         print("#"*30)
+
+    # Plot the training and validation losses and accuracies in one plot each for all experiments
+    
 
     #retrieval
     metrics_logger_retrieval = MetricsLogger() 

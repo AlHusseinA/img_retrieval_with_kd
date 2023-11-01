@@ -1,9 +1,0 @@
-batch_size: 128
-dataset_names:
-- cub200
-epochs: 1
-feature_sizes:
-- 2048
-learning_rate: 0.0009
-seed_value: 42
-start_time: 2023-10-24_18-37-38

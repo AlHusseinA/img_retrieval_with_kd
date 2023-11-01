@@ -124,7 +124,7 @@ class ResnetTrainer():
 
             # self.training_loss.append(training_loss / len(self.trainloader.dataset))
             # print(f'Epoch {epoch+1}, Training Loss: {training_loss / len(self.trainloader):.4f}, Training Accuracy: {epoch_accuracy:.4f}%')
-            print(f'Epoch {epoch + 1}, Training Loss: {training_loss / len(self.trainloader):.4f}, Training Accuracy: {epoch_accuracy:.4f}, Validation Loss: {average_validation_loss:.4f}, Validation Accuracy: {average_validation_accuracy}')
+            print(f'Epoch {epoch + 1}, Training Loss: {training_loss / len(self.trainloader):.4f}, Training Accuracy: {epoch_accuracy:.4f}, Validation Loss: {average_validation_loss:.4f}, Validation Accuracy: {average_validation_accuracy:.4f}')
 
 
             if self.metrics_logger is not None:
@@ -181,7 +181,7 @@ class ResnetTrainer():
             epoch_accuracy_eval = self.metric_eval.compute().item() * 100
             avg_loss_over_batch = running_loss / total_batches
             
-            print(f'Val Epoch, Validation Loss: {avg_loss_over_batch:.4f}, Validation Accuracy: {epoch_accuracy_eval:.2f}%')
+            # print(f'Val Epoch, Validation Loss: {avg_loss_over_batch:.4f}, Validation Accuracy: {epoch_accuracy_eval:.2f}%')
 
         avg_loss_over_batch = running_loss / total_batches
 
