@@ -7,6 +7,7 @@ import torch.nn as nn
 from exp_logging.metricsLogger import MetricsLogger
 import torchmetrics
 from torchmetrics.classification import Accuracy
+from utils.helper_functions import plot_multiple_metrics
 
 class ResnetTrainer():
     def __init__(self, model, optimizer, criterion,lr,

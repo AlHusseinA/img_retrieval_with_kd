@@ -261,7 +261,7 @@ def main_resnet():
 
     # Plot the training and validation losses and accuracies in one plot each for all experiments
     
-
+    metrics_logger.plot_multiple_metrics(log_save_path)
     #retrieval
     metrics_logger_retrieval = MetricsLogger() 
 

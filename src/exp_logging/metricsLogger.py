@@ -20,9 +20,10 @@ class MetricsLogger:
 
 
     
-    def plot_multiple_metrics(json_file_paths):
+    def plot_multiple_metrics(self,log_save_path, feature_size, lr, dataset_name):
         # Create a cycle iterator for colors
         colors = cycle(plt.rcParams['axes.prop_cycle'].by_key()['color'])
+        folder_path = f"{log_save_path}"
         
         # Initialize plots
         plt.figure(figsize=(18, 6))
@@ -31,40 +32,42 @@ class MetricsLogger:
         plt.subplot(1, 2, 1)
         plt.xlabel('Epochs')
         plt.ylabel('Accuracy')
-        plt.title('All Experiments - Training and Validation Accuracy')
+        plt.title('Training and Validation Accuracy')
         
         # Subplot for loss
         plt.subplot(1, 2, 2)
         plt.xlabel('Epochs')
         plt.ylabel('Loss')
-        plt.title('All Experiments - Training and Validation Loss')
+        plt.title('Training and Validation Loss')
         
-        # Loop over each JSON file to read and plot data
-        for json_file_path in json_file_paths:
-            color = next(colors)  # Get the next color in the cycle
-            
-            # Step 1: Read the JSON file into a Python dictionary
-            with open(json_file_path, 'r') as file:
-                data = json.load(file)
-            
-            # Step 2: Data Preparation
-            epochs = data['epochs']
-            train_acc = data['train_acc']
-            val_acc = data['val_acc']
-            train_loss = data['train_loss']
-            val_loss = data['val_loss']
-            
-            # Step 3: Plotting
-            
-            # Plot Training and Validation Accuracy
-            plt.subplot(1, 2, 1)
-            plt.plot(epochs, train_acc, label=f'Training Accuracy: {json_file_path}', color=color)
-            plt.plot(epochs, val_acc, '--', label=f'Validation Accuracy: {json_file_path}', color=color)
-            
-            # Plot Training and Validation Loss
-            plt.subplot(1, 2, 2)
-            plt.plot(epochs, train_loss, label=f'Training Loss: {json_file_path}', color=color)
-            plt.plot(epochs, val_loss, '--', label=f'Validation Loss: {json_file_path}', color=color)
+        # Loop over each JSON file in the folder to read and plot data
+        for filename in os.listdir(folder_path):
+            if filename.endswith(".json"):
+                json_file_path = os.path.join(folder_path, filename)
+                color = next(colors)  # Get the next color in the cycle
+                
+                # Step 1: Read the JSON file into a Python dictionary
+                with open(json_file_path, 'r') as file:
+                    data = json.load(file)
+                
+                # Step 2: Data Preparation
+                epochs = data['epochs']
+                train_acc = data['train_acc']
+                val_acc = data['val_acc']
+                train_loss = data['train_loss']
+                val_loss = data['val_loss']
+                
+                # Step 3: Plotting
+                
+                # Plot Training and Validation Accuracy
+                plt.subplot(1, 2, 1)
+                plt.plot(epochs, train_acc, label=f'Training Accuracy: {filename}', color=color)
+                plt.plot(epochs, val_acc, '--', label=f'Validation Accuracy: {filename}', color=color)
+                
+                # Plot Training and Validation Loss
+                plt.subplot(1, 2, 2)
+                plt.plot(epochs, train_loss, label=f'Training Loss: {filename}', color=color)
+                plt.plot(epochs, val_loss, '--', label=f'Validation Loss: {filename}', color=color)
         
         # Show legends
         plt.subplot(1, 2, 1)
@@ -75,13 +78,6 @@ class MetricsLogger:
         plt.tight_layout()
         plt.show()
 
-# Example usage (Note: these are placeholder paths; you should use the actual paths to your JSON files)
-# json_file_paths = [
-#     "/path/to/experiment1.json",
-#     "/path/to/experiment2.json",
-#     "/path/to/experiment3.json"
-# ]
-# plot_multiple_metrics(json_file_paths)
 
 
 
