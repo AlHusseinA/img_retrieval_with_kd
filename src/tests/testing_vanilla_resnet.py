@@ -101,9 +101,9 @@ def main_resnet_test():
     batch_size  = 256
     # epochs = 1000 #1 # 500
     epochs = 1000
-    lr=0.00001
+    # lr=0.00001 # best results with 256 batch size
     # lr=0.5
-    # lr=0.1
+    lr=0.00005
     print(f"Learning rate: {lr}")
     print(f"Batch size: {batch_size}")
     print(f"Epochs: {epochs}")
@@ -135,7 +135,7 @@ def main_resnet_test():
 
     if DEBUG_MODE:
         trainloader_cub200_dump, testloader_cub200_dump = dataloadercub200.get_dataloaders()
-        trainloader_cub200, testloader_cub200 = create_subset_data(trainloader_cub200_dump, testloader_cub200_dump, batch_size=32)
+        trainloader_cub200, testloader_cub200, _= create_subset_data(trainloader_cub200_dump, testloader_cub200_dump, batch_size=32)
     else:
         trainloader_cub200, testloader_cub200 = dataloadercub200.get_dataloaders()
 

@@ -13,6 +13,7 @@ import yaml
 from dataloaders.cub200loader import DataLoaderCUB200
 # from utils.metrics import calculate_map, calculate_recall_at_k
 import models.resnet50 as resnet50
+from models.resnet50_conv_compession import ResNet50_conv
 from optimizers.sgd import SGDOptimizer, SGDOptimizerVariableLR
 from optimizers.adam import AdamOptimizer
 from optimizers.adam_lr_var import AdamOptimizerVar
@@ -22,7 +23,7 @@ from loss.ce import CustomCrossEntropyLoss
 import matplotlib.pyplot as plt
 # from utils.gallery import extract_gallery_features
 from utils.similarities import evaluate_on_retrieval
-from utils.helper_functions import plot_multiple_metrics
+# from utils.helper_functions import plot_multiple_metrics
 from utils.features_unittest import TestFeatureSize
 from utils.debugging_functions import create_subset_data
 import numpy as np
@@ -116,8 +117,8 @@ def main_resnet():
 
 
     # Construct the dynamic directory path
-    # load_dir = f"/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb/data/resnet50_finetuned/experiment_gpu_{gpu_id}/weights"
-    load_dir = "/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb/data/resnet50_finetuned/experiment_gpu_1/weights"
+    load_dir = f"/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb/data/resnet50_finetuned/experiment_gpu_{gpu_id}/weights"
+    # load_dir = "/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb/data/resnet50_finetuned/experiment_gpu_1/weights"
     #####################
     # base_directory = "./experiments_results"
     # unique_directory = os.path.join(base_directory, f"experiment_gpu_{gpu_id}")
@@ -147,11 +148,11 @@ def main_resnet():
            
     #### hyperparameters #####
     batch_size  = 256
-    epochs = 500
+    epochs = 2
     # epochs = 750
-    lr=0.00001      # lr=0.5
+    # lr=0.00001      # lr=0.5
     
-    # lr=0.1
+    lr=0.1
 
     weight_decay=2e-05
 
@@ -199,10 +200,10 @@ def main_resnet():
     criterion = CustomCrossEntropyLoss()
 
     #### feature sizes #####
-    # feature_sizes = [16]
+    feature_sizes = [2048]
     # feature_sizes = [2048]
     # feature_sizes = [8, 16, 32, 64, 128, 256, 512, 1024, 2048]
-    feature_sizes = [2048, 1024, 512, 256, 128, 64, 32, 16, 8]
+    # feature_sizes = [2048, 1024, 512, 256, 128, 64, 32, 16, 8]
     # feature_sizes = [16]#, 32, 64, 128, 256, 512, 1024, 2048]
 
 
@@ -226,7 +227,14 @@ def main_resnet():
         # print(f"Training model with feature size: {feature_size}")  
         print(f"Fine-tuning ResNet50s with feature sizes: {feature_sizes}, starting with feature size: {feature_size}\n")
         # #### get model ##### 
-        model = resnet50.ResNet50(feature_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
+        # model = resnet50.ResNet50(feature_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
+        # model = ResNet50(feature_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
+        ######################################################################################################################
+        
+        model = ResNet50_conv(feature_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
+
+        ######################################################################################################################
+
         model.fine_tune_mode()
         model = model.to(device)
         # optimizer  = create_optimizer(model, lr, weight_decay=weight_decay)
@@ -261,7 +269,7 @@ def main_resnet():
 
     # Plot the training and validation losses and accuracies in one plot each for all experiments
     
-    metrics_logger.plot_multiple_metrics(log_save_path)
+    metrics_logger.plot_multiple_metrics(log_save_path, feature_size, lr, dataset_names[0])
     #retrieval
     metrics_logger_retrieval = MetricsLogger() 
 
@@ -338,7 +346,9 @@ def main_resnet():
     # metrics_logger_retrieval.to(device)
     for feature_size in feature_sizes:
 
-        model_cub200 = resnet50.ResNet50(feature_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
+        # model_cub200 = resnet50.ResNet50(feature_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
+        model_cub200 = ResNet50_conv(feature_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
+
         fine_tuned_weights = torch.load(f'{save_dir}/resnet50_{feature_size}_CUB-200_batchsize_{batch_size}_lr_{lr}.pth')
         save_dir = "/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb/data/resnet50_finetuned/experiment_gpu_1/weights"
         model_cub200.load_state_dict(fine_tuned_weights)

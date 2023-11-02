@@ -169,7 +169,8 @@ class ResnetTrainer_test:
         ax.set_xlabel('Epoch')
         ax.set_ylabel('Loss')
         ax.set_title('Loss vs Epoch')
-        ax.legend()
+        # ax.legend()
+        ax.legend(loc='upper right')
         
         return fig
 
