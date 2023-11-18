@@ -1,3 +1,39 @@
+
+
+with conv 2048, I tried:
+ X 1. Adding a relu/drop (with both 0.2 only) BN not frozen - fine_tune_mode ON Epoch 138/1000, Train Loss: 2.6749, Train Acc: 56.8902, Val Loss: 2.6315, Val Acc: 64.3079
+ X 2. Adding a relu/drop (with both 0.1 only) BN not frozen - fine_tune_mode ON Epoch 126/1000, Train Loss: 2.6343, Train Acc: 58.6920, Val Loss: 2.5808, Val Acc: 65.3435
+
+
+ YY 5. Removed the dropout/relu 0.1 and just freeze the BN layers increased lr from lr=0.00001 to lr=0.0001- fine_tune_mode ON  Train Acc: 93.1431, Val Loss: 1.6813, Val Acc: 82.5854
+ YY 6. Adding a relu/drop (with both 0.25 only) BN not frozen - fine_tune_mode ON lr = 0.00006 Epoch 129/1000, Train Loss: 1.3608, Train Acc: 88.4885, Val Loss: 1.6569, Val Acc: 81.9986
+ YY 7. Adding a relu/drop (with both 0.3 only) BN not frozen - fine_tune_mode ON lr = 0.00006 Epoch 120/1000, Train Loss: 1.3728, Train Acc: 87.6877, Val Loss: 1.6588, Val Acc: 81.9986
+ YY 8. Adding a relu/drop (with both 0.35 only) BN not frozen - fine_tune_mode ON lr = 0.00006 Epoch 105/1000, Train Loss: 1.4185, Train Acc: 86.2529, Val Loss: 1.6592, Val Acc: 81.3600
+ Y 9. Adding a relu/drop (with both 0.35 only) BN not frozen - fine_tune_mode ON lr = 0.00008 Epoch 129/1000, Train Loss: 1.2958, Train Acc: 90.0400, Val Loss: 1.6448, Val Acc: 81.9986
+ YY 10. Adding a relu/drop (with both 0.35 only) BN not frozen - fine_tune_mode ON lr = 0.00007 Epoch 105/1000, Train Loss: 1.3699, Train Acc: 87.3373, Val Loss: 1.6540, Val Acc: 81.9986
+ YYY 11. Adding a relu/drop (with both 0.35 only) with all BN frozen - fine_tune_mode ON lr = 0.00007 Epoch 129/1000, Train Loss: 1.3323, Train Acc: 89.2392, Val Loss: 1.6497, Val Acc: 82.1540
+ YYYY 12. Adding a relu/drop (with both 0.4 only) BN not frozen - fine_tune_mode ON lr = 0.00007 Epoch 149/1000, Train Loss: 1.3466, Train Acc: 88.3550, Val Loss: 1.6616, Val Acc: 82.3438
+ YYY 13. Adding a relu/drop (with both 0.45 only) BN not frozen - fine_tune_mode ON lr = 0.000066 Epoch 145/1000, Train Loss: 1.3888, Train Acc: 87.8212, Val Loss: 1.6407, Val Acc: 82.2057
+YYY  14. Adding a relu/drop (with both 0.38 only) BN not frozen - fine_tune_mode ON lr = 0.000072 Epoch 104/1000, Train Loss: 1.3345, Train Acc: 88.3217, Val Loss: 1.6486, Val Acc: 82.0677
+YYY 15. Adding a relu/drop (with both 0.35 only) with all BN frozen - fine_tune_mode ON lr = 0.000065 Epoch 126/1000, Train Loss: 1.3818, Train Acc: 87.4041, Val Loss: 1.6422, Val Acc: 82.2575
+16.  Adding a relu/drop (with both 0.35 only) with all BN frozen - fine_tune_mode ON lr = 0.00006 Epoch 105/1000, Train Loss: 1.4190, Train Acc: 86.1195, Val Loss: 1.6583, Val Acc: 81.6362
+YYY 17. Adding a relu/drop (with both 0.45 only) BN not frozen - fine_tune_mode ON lr = 0.00004 Epoch 145/1000, Train Loss: 1.5859, Train Acc: 82.4658, Val Loss: 1.6838, Val Acc: 80.4108
+Y 18. Adding a relu/drop (with both 0.35 only) with all BN frozen - fine_tune_mode ON lr = 0.00009 Epoch 105/1000, Train Loss: 1.3052, Train Acc: 89.2893, Val Loss: 1.6448, Val Acc: 82.2402
+YYY 19. Adding a relu/drop (with both 0.35 only) with all BN frozen - fine_tune_mode ON lr = 0.00005 Epoch 132/1000, Train Loss: 1.4546, Train Acc: 85.5689, Val Loss: 1.6675, Val Acc: 81.4981
+Y 20. Adding a relu/drop (with both 0.35 only) with all BN frozen - fine_tune_mode ON lr = 0.00004 Epoch 145/1000, Train Loss: 1.5542, Train Acc: 83.3333, Val Loss: 1.6815, Val Acc: 80.6179
+21. Adding a relu/drop (with both 0.4 only) BN not frozen - fine_tune_mode ON lr = 0.000035 Epoch 152/1000, Train Loss: 1.5914, Train Acc: 82.3156, Val Loss: 1.7181, Val Acc: 79.8757
+22. Adding a relu/drop (with both 0.35 only) with all BN frozen - fine_tune_mode ON lr = 0.00003 Epoch 137/1000, Train Loss: 1.7068, Train Acc: 79.1792, Val Loss: 1.7572, Val Acc: 79.0991
+Y 23. Adding a relu/drop (with both 0.4 only) BN not frozen - fine_tune_mode ON lr = 0.000047 Epoch 122/1000, Train Loss: 1.4580, Train Acc: 85.7524, Val Loss: 1.6656, Val Acc: 81.1874
+X 24. Adding a relu/drop (with both 0.4 only) BN not frozen - fine_tune_mode ON lr = 0.000027 Epoch 120/1000, Train Loss: 1.7934, Train Acc: 77.0270, Val Loss: 1.8147, Val Acc: 77.8046
+YY 25. Adding a relu/drop (with both 0.35 only) with all BN frozen - fine_tune_mode ON lr = 0.000095 Epoch 105/1000, Train Loss: 1.2926, Train Acc: 89.3894, Val Loss: 1.6457, Val Acc: 82.2575
+26. Adding a relu/drop (with both 0.47 only) BN not frozen - fine_tune_mode ON lr = 0.000068 Epoch 105/1000, Train Loss: 1.4040, Train Acc: 86.6033, Val Loss: 1.6424, Val Acc: 81.7397
+27. Adding a relu/drop (with both 0.45 only) with all BN frozen - fine_tune_mode ON lr = 0.000095  Epoch 90/1000, Train Loss: 1.3139, Train Acc: 88.8388, Val Loss: 1.6398, Val Acc: 81.9123
+28. Adding a relu/drop (with both 0.4 only) with all BN frozen - fine_tune_mode ON lr = 0.000095 Epoch 105/1000, Train Loss: 1.3033, Train Acc: 89.0390, Val Loss: 1.6452, Val Acc: 82.0849
+30. Adding a relu/drop (with both 0.37 only) with all BN frozen - fine_tune_mode ON lr = 0.000095 
+31. 30. Adding a relu/drop (with both 0.37 only) with all BN frozen - fine_tune_mode ON lr = 0.
+
+
+
 best settings for vanilla with very little overfitting observed:
 
 batch_size  = 256

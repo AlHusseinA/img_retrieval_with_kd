@@ -18,7 +18,7 @@ class ResnetTrainer_test:
         self.val_losses = []
         self.val_accs = []
         self.scheduler = scheduler
-        self.min_epochs_for_early_stopping = 10
+        self.min_epochs_for_early_stopping = 20
         self.actual_epochs_run = 0
         self.use_early_stopping= use_early_stopping
 

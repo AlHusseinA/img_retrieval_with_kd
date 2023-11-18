@@ -103,8 +103,8 @@ def main_resnet_test():
     batch_size  = 256
     # epochs = 1000 #1 # 500
     epochs = 1000
-    # lr=0.00001 # best results with 256 batch size
-    lr = 0.000068
+    lr=0.000095 # best results with 256 batch size
+    # lr = 0.0001
     # lr=0.5
     # lr=0.0001 # Epoch 107/1000, Train Loss: 1.1535, Train Acc: 93.3267, Val Loss: 1.7170, Val Acc: 82.7235
     # lr = 0.01 # Epoch 154/1000, Train Loss: 1.4609, Train Acc: 86.8368, Val Loss: 2.0907, Val Acc: 72.8512
@@ -149,12 +149,15 @@ def main_resnet_test():
 
     features_size = 2048
     #with relu and dropout
-    model = ResNet50_convV2(features_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
-    model.fine_tune_mode()
-    # model = ResNet50_convV3_BN(features_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
+    # model = ResNet50_convV2(features_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
+    model = ResNet50_convV3_BN(features_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
     # model = ResNet50_vanilla(num_classes_cub200, set_eval_mode=False, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
+    # add vanilla + bn frozen
 
     model = model.to(device)
+    model.freeze_bn_layers()
+    model.fine_tune_mode()
+
     criterion = CustomCrossEntropyLoss()
     # optimizer = create_optimizer_var_lr(model, lr, weight_decay=weight_decay)
     optimizer  = create_optimizer_var_lr(model, lr, weight_decay=weight_decay)
@@ -182,8 +185,8 @@ def main_resnet_test():
     # Plot the training and validation losses and accuracies
     fig1 = trainer.plot_loss_vs_epoch()
     fig2 = trainer.plot_acc_vs_epoch()
-    fig1.savefig(f'vanila_WITH_2048_CONV_test_loss_vs_epoch_scheduler_Adam_cos_warmup_batch_size_{batch_size}_lr_{lr}_epochs_{epochs}_with_dropout2.png')
-    fig2.savefig(f'vanila_WITH_2048_CONV_test_acc_vs_epoch_scheduler_Adam_cos_warmup_batch_size_{batch_size}_lr_{lr}_epochs_{epochs}_with_dropout2.png')    
+    fig1.savefig(f'vanila_WITH_2048_CONV_test_loss_vs_epoch_scheduler_Adam_cos_warmup_batch_size_{batch_size}_lr_{lr}_epochs_{epochs}_with_dropout4_and_BNfrozen.png')
+    fig2.savefig(f'vanila_WITH_2048_CONV_test_acc_vs_epoch_scheduler_Adam_cos_warmup_batch_size_{batch_size}_lr_{lr}_epochs_{epochs}_with_dropout4_and_BNfrozen.png')    
 
 
 

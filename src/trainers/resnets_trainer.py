@@ -258,7 +258,7 @@ class ResnetTrainer():
 
             plt.title(f'Training and Testing {metric_name} over Epochs - {plot_id}')
             # plt.legend()
-            plt.legend(loc='upper right')
+            plt.legend(loc='upper left')
             plt.savefig(f"{self.log_save_path}_{metric_name}_{plot_id}.png")
             # plt.show()
 

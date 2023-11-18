@@ -71,9 +71,9 @@ class MetricsLogger:
         
         # Show legends
         plt.subplot(1, 2, 1)
-        plt.legend()
+        plt.legend(loc='upper left')
         plt.subplot(1, 2, 2)
-        plt.legend()
+        plt.legend(loc='upper left')
         
         plt.tight_layout()
         plt.show()

@@ -55,12 +55,15 @@ def main_resnet():
     #### set the confi dict #####
     # Initialize config dictionary
     config_dict = {}
-
+    #### set device #####
+    gpu_id = os.environ.get('CUDA_VISIBLE_DEVICES', '0')  # Default to '0' if not set
+    print(f"GPU ID: {gpu_id}")
     #### directory to save fine tuned weights #####
     # save_dir = "/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb/data/resnet50_finetuned"
     # for models already moved to a different folder
     # load_dir ="/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb/data/resnet50_finetuned/best_performing_04102023 evening"
-    load_dir = "/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb/data/resnet50_finetuned/experiment_gpu_1/weights"
+    # load_dir = "/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb/data/resnet50_finetuned/experiment_gpu_1/weights"
+    load_dir = f"/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb/data/resnet50_finetuned/experiment_gpu_{gpu_id}/weights"
     data_root ="/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb/data/cub200/"
     # Create dictionaries to store metrics
     metrics_cub200_retrieval = {}

@@ -18,7 +18,8 @@ class AdamOptimizerVar:
             {'params': self.model.features[5].parameters(), 'lr': lr * 0.036},  # layer2
             {'params': self.model.features[6].parameters(), 'lr': lr},       # layer3
             {'params': self.model.features[7].parameters(), 'lr': lr},       # layer4
-            {'params': self.model.classifier.parameters(), 'lr': lr}         # fc (now called classifier)
+            # {'params': self.model.classifier.parameters(), 'lr': lr}         # fc (now called classifier)
+            {'params': self.model.fc.parameters(), 'lr': lr}         # fc (now called classifier)
         ]
         self.lr = lr
         self.betas = betas

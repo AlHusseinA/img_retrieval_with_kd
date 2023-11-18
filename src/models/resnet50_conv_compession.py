@@ -51,3 +51,9 @@ class ResNet50_conv(nn.Module):
             param.requires_grad = False
             
         self.classifier = nn.Identity()  # Remove classification head
+
+
+
+
+
+

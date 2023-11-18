@@ -14,6 +14,9 @@ from dataloaders.cub200loader import DataLoaderCUB200
 # from utils.metrics import calculate_map, calculate_recall_at_k
 import models.resnet50 as resnet50
 from models.resnet50_conv_compession import ResNet50_conv
+
+from models.resnet50_conv_compressionV2 import ResNet50_convV2, ResNet50_convV3_BN
+
 from optimizers.sgd import SGDOptimizer, SGDOptimizerVariableLR
 from optimizers.adam import AdamOptimizer
 from optimizers.adam_lr_var import AdamOptimizerVar
@@ -148,11 +151,13 @@ def main_resnet():
            
     #### hyperparameters #####
     batch_size  = 256
-    epochs = 2
+    epochs = 1000
     # epochs = 750
     # lr=0.00001      # lr=0.5
-    
-    lr=0.1
+    # lr=0.000009
+    lr = 0.00007
+    # lr=0.01
+    # lr = 0.000008
 
     weight_decay=2e-05
 
@@ -200,10 +205,10 @@ def main_resnet():
     criterion = CustomCrossEntropyLoss()
 
     #### feature sizes #####
-    feature_sizes = [2048]
+    # feature_sizes = [2048]
     # feature_sizes = [2048]
     # feature_sizes = [8, 16, 32, 64, 128, 256, 512, 1024, 2048]
-    # feature_sizes = [2048, 1024, 512, 256, 128, 64, 32, 16, 8]
+    feature_sizes = [2048, 1024, 512, 256, 128, 64, 32, 16, 8]
     # feature_sizes = [16]#, 32, 64, 128, 256, 512, 1024, 2048]
 
 
@@ -231,7 +236,8 @@ def main_resnet():
         # model = ResNet50(feature_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
         ######################################################################################################################
         
-        model = ResNet50_conv(feature_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
+        # model = ResNet50_conv(feature_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
+        model = ResNet50_convV2(feature_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
 
         ######################################################################################################################
 
@@ -349,7 +355,7 @@ def main_resnet():
         # model_cub200 = resnet50.ResNet50(feature_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
         model_cub200 = ResNet50_conv(feature_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
 
-        fine_tuned_weights = torch.load(f'{save_dir}/resnet50_{feature_size}_CUB-200_batchsize_{batch_size}_lr_{lr}.pth')
+        fine_tuned_weights = torch.load(f'{load_dir}/resnet50_{feature_size}_CUB-200_batchsize_{batch_size}_lr_{lr}.pth')
         save_dir = "/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb/data/resnet50_finetuned/experiment_gpu_1/weights"
         model_cub200.load_state_dict(fine_tuned_weights)
         model_cub200.feature_extractor_mode()

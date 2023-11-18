@@ -1,0 +1,23 @@
+DEBUG_MODE: false
+batch_size: 256
+dataset_names:
+- cub200
+epochs: 1000
+feature_sizes:
+- 2048
+- 1024
+- 512
+- 256
+- 128
+- 64
+- 32
+- 16
+- 8
+learning_rate: 9.0e-06
+optimizer: Adam
+saved weights: /media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb/data/resnet50_finetuned/experiment_gpu_0/weights
+scheduler: CosineAnnealingLRWrapperWithWarmup
+seed_value: 42
+start_time: 2023-11-03_20-26-09
+use_early_stopping: true
+weight_decay: 2.0e-05
