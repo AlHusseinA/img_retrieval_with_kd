@@ -23,7 +23,7 @@ class ResNet50_convV2(nn.Module):
             model.avgpool,
             nn.Conv2d(2048, features_size, 1, 1, 0),
             nn.ReLU(),
-            nn.Dropout(0.4),
+            nn.Dropout(0.38),
             nn.Flatten()
         )
 
@@ -77,7 +77,7 @@ class ResNet50_convV3_BN(nn.Module):
             model.avgpool,
             nn.Conv2d(2048, features_size, 1, 1, 0),
             nn.ReLU(),
-            nn.Dropout(0.37),
+            nn.Dropout(0.35),
             nn.Flatten()
         )
 

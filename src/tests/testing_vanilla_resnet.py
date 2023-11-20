@@ -44,24 +44,25 @@ def main_resnet_test():
             print(f"Directory {directory_path} already exists.")
 
   
-    def create_optimizer(model, lr,weight_decay):        
-        optimizer = AdamOptimizer(model.parameters(), lr=lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-        return optimizer.get_optimizer()
+    # def create_optimizer(model, lr,weight_decay):        
+    #     optimizer = AdamOptimizer(model.parameters(), lr=lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+    #     return optimizer.get_optimizer()
     
-    def create_optimizer_var_lr(model, lr,weight_decay):        
+    def create_optimizer_var_lr(model, lr, weight_decay):        
         optimizer = AdamOptimizerVar(model, lr=lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
         return optimizer.get_optimizer()
+    
     # def create_optimizer_sgd(model, lr,weight_decay):
     #     optimizer = SGDOptimizer(model, lr=lr, momentum=0.9, weight_decay=weight_decay)
     #     return optimizer.get_optimizer()
     
-    def create_optimizer_var_sgd(model, lr,weight_decay):
-        optimizer = SGDOptimizerVariableLR(model, lr=lr, momentum=0.9, weight_decay=weight_decay)
-        return optimizer.get_optimizer()
+    # def create_optimizer_var_sgd(model, lr,weight_decay):
+    #     optimizer = SGDOptimizerVariableLR(model, lr=lr, momentum=0.9, weight_decay=weight_decay)
+    #     return optimizer.get_optimizer()
     
-    def create_scheduler_cos(optimizer, T_max,  eta_min=0.01):
-        scheduler = CosineAnnealingLRWrapper(optimizer, T_max, eta_min=eta_min)
-        return scheduler
+    # def create_scheduler_cos(optimizer, T_max,  eta_min=0.01):
+    #     scheduler = CosineAnnealingLRWrapper(optimizer, T_max, eta_min=eta_min)
+    #     return scheduler
     
     def create_scheduler_cosw(optimizer, T_max=100, warmup_epochs=20, warmup_decay="cosine"):
         scheduler = CosineAnnealingLRWrapperWithWarmup(optimizer, T_max=100, warmup_epochs=20, warmup_decay="cosine")
@@ -104,7 +105,8 @@ def main_resnet_test():
     # epochs = 1000 #1 # 500
     epochs = 1000
     # lr=0.00001 # best results with 256 batch size
-    lr = 0.000068
+    # lr = 0.000068
+    lr = 0.00007
     # lr=0.5
     # lr=0.0001 # Epoch 107/1000, Train Loss: 1.1535, Train Acc: 93.3267, Val Loss: 1.7170, Val Acc: 82.7235
     # lr = 0.01 # Epoch 154/1000, Train Loss: 1.4609, Train Acc: 86.8368, Val Loss: 2.0907, Val Acc: 72.8512

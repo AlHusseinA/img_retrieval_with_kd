@@ -36,7 +36,7 @@ class ResnetTrainer():
         self.metric_eval = Accuracy(task="multiclass", num_classes=self.num_classes) 
         self.device = device
         self.actual_epochs_run = 0
-        self.min_epochs_for_early_stopping = 15
+        self.min_epochs_for_early_stopping = 20
         if device:
             self.device = device
         else:
@@ -65,7 +65,7 @@ class ResnetTrainer():
             self.counter = 0  # Reset counter
         else:
             self.counter += 1
-            if counter >= patience:
+            if self.counter >= self.patience:
                 print(f"\nEarly stopping triggered at epoch: {self.actual_epochs_run}.")
 
                 # insert logic for config file
@@ -87,7 +87,6 @@ class ResnetTrainer():
             training_loss = 0.0
             # is_last_batch = False 
             for batch_idx, data in enumerate(self.trainloader):
-            # for data in self.trainloader:
                 inputs, labels = data
                 inputs, labels = inputs.to(self.device), labels.to(self.device)                
                 self.optimizer.zero_grad()
@@ -99,9 +98,8 @@ class ResnetTrainer():
             
                 # Calculating accuracy using torchmetrics inside the loop for each batch
                 acc = self.metric(outputs.softmax(dim=-1), labels)
-                # more compactly
-                # self.metric(outputs.softmax(dim=-1), labels)
-                batch_accuracies.append(acc.item() * 100)  # Storing batch-wise accuracy
+
+
 
             if self.scheduler is not None:
                 self.scheduler.step()
@@ -112,8 +110,6 @@ class ResnetTrainer():
             self.accumulated_val_accuracies.append(average_validation_accuracy)
             self.training_loss_list.append(training_loss / len(self.trainloader))
             epoch_accuracy = self.metric.compute().item() * 100  # Compute the accumulated accuracy
-            # the above can be re-written as
-            # epoch_accuracy = acc.compute().item() * 100
             self.training_accuracy.append(epoch_accuracy)
             self.actual_epochs_run += 1
 
@@ -123,9 +119,7 @@ class ResnetTrainer():
                 if stop_training:
                     break  # Stop training
 
-            # self.training_loss.append(training_loss / len(self.trainloader.dataset))
-            # print(f'Epoch {epoch+1}, Training Loss: {training_loss / len(self.trainloader):.4f}, Training Accuracy: {epoch_accuracy:.4f}%')
-            print(f'Epoch {epoch + 1}, Training Loss: {training_loss / len(self.trainloader):.4f}, Training Accuracy: {epoch_accuracy:.4f}, Validation Loss: {average_validation_loss:.4f}, Validation Accuracy: {average_validation_accuracy:.4f}')
+            print(f'Epoch {epoch + 1}/{self.epochs}, Training Loss: {training_loss / len(self.trainloader):.4f}, Training Accuracy: {epoch_accuracy:.4f}, Validation Loss: {average_validation_loss:.4f}, Validation Accuracy: {average_validation_accuracy:.4f}')
 
 
             if self.metrics_logger is not None:
@@ -181,7 +175,7 @@ class ResnetTrainer():
             # Compute the accumulated metrics
             epoch_accuracy_eval = self.metric_eval.compute().item() * 100
             avg_loss_over_batch = running_loss / total_batches
-            
+            self.metric_eval.reset()
             # print(f'Val Epoch, Validation Loss: {avg_loss_over_batch:.4f}, Validation Accuracy: {epoch_accuracy_eval:.2f}%')
 
         avg_loss_over_batch = running_loss / total_batches

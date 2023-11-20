@@ -2,7 +2,7 @@ import torch.optim as optim
 from torch.optim import Adam
 
 class AdamOptimizerVar:
-    def __init__(self, model, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False):
+    def __init__(self, model, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=1e-5, amsgrad=False):
         # Validate that the model has the expected attributes
         # for attr in ['conv1', 'bn1', 'layer1', 'layer2', 'layer3', 'layer4', 'fc']:
         #     if not any(hasattr(layer, attr) for layer in self.model.features):

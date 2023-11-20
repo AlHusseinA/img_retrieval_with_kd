@@ -19,7 +19,9 @@ from models.resnet50_conv_compressionV2 import ResNet50_convV2, ResNet50_convV3_
 
 from optimizers.sgd import SGDOptimizer, SGDOptimizerVariableLR
 from optimizers.adam import AdamOptimizer
-from optimizers.adam_lr_var import AdamOptimizerVar
+# from optimizers.adam_lr_var import AdamOptimizerVar
+from optimizers.adam_lr_var_test import AdamOptimizerVar
+
 from schedulers.cosine import CosineAnnealingLRWrapper, CosineAnnealingLRWrapperWithWarmup
 from trainers.resnets_trainer import ResnetTrainer
 from loss.ce import CustomCrossEntropyLoss
@@ -52,14 +54,14 @@ def main_resnet():
             print(f"Directory {directory_path} already exists.")
 
   
-    def create_optimizer(model, lr,weight_decay):        
-        temp = AdamOptimizer(model.parameters(), lr=lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-        optimizer = temp.get_optimizer()
-        optimizer.actual_optimizer_name = type(optimizer).__name__
-        return optimizer    
+    # def create_optimizer(model, lr,weight_decay):        
+    #     temp = AdamOptimizer(model.parameters(), lr=lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+    #     optimizer = temp.get_optimizer()
+    #     optimizer.actual_optimizer_name = type(optimizer).__name__
+    #     return optimizer    
 
     
-    def create_optimizer_var_lr(model, lr,weight_decay):        
+    def create_optimizer_var_lr(model, lr, weight_decay):        
         temp = AdamOptimizerVar(model, lr=lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
         optimizer = temp.get_optimizer()
         optimizer.actual_optimizer_name = type(optimizer).__name__
@@ -69,16 +71,16 @@ def main_resnet():
     #     optimizer = SGDOptimizer(model, lr=lr, momentum=0.9, weight_decay=weight_decay)
     #     return optimizer.get_optimizer()
     
-    def create_optimizer_var_sgd(model, lr,weight_decay):
-        temp = SGDOptimizerVariableLR(model, lr=lr, momentum=0.9, weight_decay=weight_decay)
-        optimizer = temp.get_optimizer()
-        optimizer.actual_optimizer_name = type(optimizer).__name__
-        return optimizer 
+    # def create_optimizer_var_sgd(model, lr,weight_decay):
+    #     temp = SGDOptimizerVariableLR(model, lr=lr, momentum=0.9, weight_decay=weight_decay)
+    #     optimizer = temp.get_optimizer()
+    #     optimizer.actual_optimizer_name = type(optimizer).__name__
+    #     return optimizer 
     
-    def create_scheduler_cos(optimizer, T_max,  eta_min=0.01):
-        scheduler = CosineAnnealingLRWrapper(optimizer, T_max, eta_min=eta_min)
-        scheduler.actual_scheduler_name = type(scheduler).__name__
-        return scheduler 
+    # def create_scheduler_cos(optimizer, T_max,  eta_min=0.01):
+    #     scheduler = CosineAnnealingLRWrapper(optimizer, T_max, eta_min=eta_min)
+    #     scheduler.actual_scheduler_name = type(scheduler).__name__
+    #     return scheduler 
     
     def create_scheduler_cosw(optimizer, T_max=100, warmup_epochs=20, warmup_decay="cosine"):
         scheduler = CosineAnnealingLRWrapperWithWarmup(optimizer, T_max=100, warmup_epochs=20, warmup_decay="cosine")
@@ -155,7 +157,8 @@ def main_resnet():
     # epochs = 750
     # lr=0.00001      # lr=0.5
     # lr=0.000009
-    lr = 0.00007
+    # lr = 0.00007
+    lr = 0.00007 # 
     # lr=0.01
     # lr = 0.000008
 
@@ -238,7 +241,7 @@ def main_resnet():
         
         # model = ResNet50_conv(feature_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
         model = ResNet50_convV2(feature_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
-
+        # model = ResNet50_convV3_BN(feature_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
         ######################################################################################################################
 
         model.fine_tune_mode()
