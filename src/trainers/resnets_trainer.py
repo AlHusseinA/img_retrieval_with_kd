@@ -213,6 +213,52 @@ class ResnetTrainer():
     #     plot_generic_metrics(epochs_range, train_accuracies, test_accuracies, 'Accuracy', 'Accuracy (%)')
 
 
+    # def plot_metrics(self, train_losses, test_losses, train_accuracies, test_accuracies):
+    #     epochs_range = range(self.actual_epochs_run)
+    #     plot_id = f"{self.dataset_name}_ResNet50_FeatureSize_{self.feature_size}"
+
+    #     def plot_generic_metrics(epochs_range, train_metric, test_metric, metric_name, ylabel):
+    #         if len(epochs_range) != len(train_metric) or len(epochs_range) != len(test_metric):
+    #             raise ValueError(f"Mismatch in lengths: epochs_range ({len(epochs_range)}), train_metric ({len(train_metric)}), test_metric ({len(test_metric)})")
+
+    #         plt.figure(figsize=(14, 10))
+    #         plt.plot(epochs_range, train_metric, label=f'Training {metric_name}')
+    #         plt.plot(epochs_range, test_metric, label=f'Testing {metric_name}')
+    #         plt.xlabel('Epochs')
+    #         plt.ylabel(ylabel)
+
+
+
+    #         # Determine if we are looking for max or min and set the appropriate title
+    #         if 'Loss' in metric_name:
+    #             min_loss_epoch, min_loss_value = min(enumerate(train_metric), key=lambda x: x[1])
+    #             annotate_text = f"{min_loss_value:.4f}"
+    #             # Adjust the position of the annotation text
+    #             text_position = (min_loss_epoch, min_loss_value * 1.05)  # slightly above the actual point
+    #             arrowprops_dict = dict(facecolor='red', arrowstyle='wedge,tail_width=0.3', shrinkA=10, shrinkB=5, linewidth=1.5)
+    #         else:
+    #             max_acc_epoch, max_acc_value = max(enumerate(train_metric), key=lambda x: x[1])
+    #             annotate_text = f"{max_acc_value:.2f}%"
+    #             # Adjust the position of the annotation text
+    #             text_position = (max_acc_epoch, max_acc_value * 0.95)  # slightly below the actual point
+    #             arrowprops_dict = dict(facecolor='green', arrowstyle='wedge,tail_width=0.3', shrinkA=10, shrinkB=5, linewidth=1.5)
+
+    #         # Annotate the plot with the highest/lowest value
+    #         plt.annotate(annotate_text,
+    #                     xy=(max_acc_epoch, max_acc_value) if 'Accuracy' in metric_name else (min_loss_epoch, min_loss_value),
+    #                     xytext=text_position,
+    #                     arrowprops=arrowprops_dict,
+    #                     fontsize=12)
+
+    #         plt.title(f'Training and Testing {metric_name} over Epochs - {plot_id}')
+    #         # plt.legend()
+    #         plt.legend(loc='upper left')
+    #         plt.savefig(f"{self.log_save_path}_{metric_name}_{plot_id}.png")
+    #         # plt.show()
+
+    #     plot_generic_metrics(epochs_range, train_losses, test_losses, 'Loss', 'Loss')
+    #     plot_generic_metrics(epochs_range, train_accuracies, test_accuracies, 'Accuracy', 'Accuracy (%)')
+
     def plot_metrics(self, train_losses, test_losses, train_accuracies, test_accuracies):
         epochs_range = range(self.actual_epochs_run)
         plot_id = f"{self.dataset_name}_ResNet50_FeatureSize_{self.feature_size}"
@@ -227,35 +273,26 @@ class ResnetTrainer():
             plt.xlabel('Epochs')
             plt.ylabel(ylabel)
 
+            # Annotate for both training and testing metrics
+            for metric, color, label in [(train_metric, 'red', 'Training'), (test_metric, 'blue', 'Testing')]:
+                if 'Loss' in metric_name:
+                    optimal_epoch, optimal_value = min(enumerate(metric), key=lambda x: x[1])
+                    annotate_text = f"{optimal_value:.4f} ({label})"
+                else:
+                    optimal_epoch, optimal_value = max(enumerate(metric), key=lambda x: x[1])
+                    annotate_text = f"{optimal_value:.2f}% ({label})"
 
+                text_position = (optimal_epoch, optimal_value * (1.05 if 'Loss' in metric_name else 0.95))
+                arrowprops_dict = dict(facecolor=color, arrowstyle='->', linewidth=1.5)
 
-            # Determine if we are looking for max or min and set the appropriate title
-            if 'Loss' in metric_name:
-                min_loss_epoch, min_loss_value = min(enumerate(train_metric), key=lambda x: x[1])
-                annotate_text = f"{min_loss_value:.4f}"
-                # Adjust the position of the annotation text
-                text_position = (min_loss_epoch, min_loss_value * 1.05)  # slightly above the actual point
-                arrowprops_dict = dict(facecolor='red', arrowstyle='wedge,tail_width=0.3', shrinkA=10, shrinkB=5, linewidth=1.5)
-            else:
-                max_acc_epoch, max_acc_value = max(enumerate(train_metric), key=lambda x: x[1])
-                annotate_text = f"{max_acc_value:.2f}%"
-                # Adjust the position of the annotation text
-                text_position = (max_acc_epoch, max_acc_value * 0.95)  # slightly below the actual point
-                arrowprops_dict = dict(facecolor='green', arrowstyle='wedge,tail_width=0.3', shrinkA=10, shrinkB=5, linewidth=1.5)
-
-            # Annotate the plot with the highest/lowest value
-            plt.annotate(annotate_text,
-                        xy=(max_acc_epoch, max_acc_value) if 'Accuracy' in metric_name else (min_loss_epoch, min_loss_value),
-                        xytext=text_position,
-                        arrowprops=arrowprops_dict,
-                        fontsize=12)
+                plt.annotate(annotate_text, xy=(optimal_epoch, optimal_value),
+                            xytext=text_position, arrowprops=arrowprops_dict,
+                            fontsize=12)
 
             plt.title(f'Training and Testing {metric_name} over Epochs - {plot_id}')
-            # plt.legend()
             plt.legend(loc='upper left')
             plt.savefig(f"{self.log_save_path}_{metric_name}_{plot_id}.png")
             # plt.show()
 
         plot_generic_metrics(epochs_range, train_losses, test_losses, 'Loss', 'Loss')
         plot_generic_metrics(epochs_range, train_accuracies, test_accuracies, 'Accuracy', 'Accuracy (%)')
-

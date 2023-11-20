@@ -153,7 +153,7 @@ def main_resnet():
            
     #### hyperparameters #####
     batch_size  = 256
-    epochs = 1000
+    
     # epochs = 750
     # lr=0.00001      # lr=0.5
     # lr=0.000009
@@ -171,17 +171,9 @@ def main_resnet():
     warmup_epochs=20 
     lr_warmup_decay=0.01 
 
-    T_max=int(epochs/2)
-    last_epoch = -1
+    
 
-    #### print hyperparameters #####
-    print("/\\"*30)
-    print(f"Learning rate: {lr}")
-    print(f"You are in DEBUG MODE: {DEBUG_MODE}")
-    print(f"You are using batch size: {batch_size}")
-    print(f"You are using epochs: {epochs}")
-    print(f"You are using EARLY STOPPING: {use_early_stopping}")
-    print("/\\"*30)
+
     
 
     #### get data #####root, batch_size=32,num_workers=10   
@@ -192,10 +184,23 @@ def main_resnet():
         # create small subset of data to make debuggin faster
         trainloader_cub200_dump, testloader_cub200_dump = dataloadercub200.get_dataloaders()
         trainloader_cub200, testloader_cub200, batch_size = create_subset_data(trainloader_cub200_dump, testloader_cub200_dump, batch_size=32)
+        epochs = 5
+        T_max=int(epochs/2)
+        last_epoch = -1
     else:
         trainloader_cub200, testloader_cub200 = dataloadercub200.get_dataloaders()
+        epochs = 1000
+        T_max=int(epochs/2)
+        last_epoch = -1
     
-
+    #### print hyperparameters #####
+    print("/\\"*30)
+    print(f"Learning rate: {lr}")
+    print(f"You are in DEBUG MODE: {DEBUG_MODE}")
+    print(f"You are using batch size: {batch_size}")
+    print(f"You are using epochs: {epochs}")
+    print(f"You are using EARLY STOPPING: {use_early_stopping}")
+    print("/\\"*30)
     #### prep logger ####
     
     # Initializing metrics logger for later use in logging metrics
@@ -209,9 +214,9 @@ def main_resnet():
 
     #### feature sizes #####
     # feature_sizes = [2048]
-    # feature_sizes = [2048]
+    feature_sizes = [2048]
     # feature_sizes = [8, 16, 32, 64, 128, 256, 512, 1024, 2048]
-    feature_sizes = [2048, 1024, 512, 256, 128, 64, 32, 16, 8]
+    # feature_sizes = [2048, 1024, 512, 256, 128, 64, 32, 16, 8]
     # feature_sizes = [16]#, 32, 64, 128, 256, 512, 1024, 2048]
 
 
