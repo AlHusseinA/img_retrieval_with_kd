@@ -102,8 +102,8 @@ def main_resnet():
         model, training_loss, training_accuracy, average_validation_loss, average_validation_accuracy = trainer.train_model()
         trainer.plot_metrics(training_loss, average_validation_loss, training_accuracy, average_validation_accuracy)
 
-        torch.save(model.state_dict(), f'{save_dir}/resnet50_{feature_size}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth')
-        print(f"Model saved at {save_dir}/resnet50_{feature_size}_{dataset_name}_fine_tuned.pth")
+        torch.save(model.state_dict(), f'{save_dir}/resnet50_feature_size_{feature_size}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth')
+        print(f"Model saved at {save_dir}/resnet50_feature_size_{feature_size}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth")
         return model, training_loss, training_accuracy, average_validation_loss, average_validation_accuracy
 
     
@@ -204,7 +204,7 @@ def main_resnet():
     #### prep logger ####
     
     # Initializing metrics logger for later use in logging metrics
-    dataset_names=["cub200"]
+    dataset_names="cub200"
 
     metrics_logger = MetricsLogger()
     # metrics_logger.to(device)
@@ -214,10 +214,8 @@ def main_resnet():
 
     #### feature sizes #####
     # feature_sizes = [2048]
-    feature_sizes = [2048]
     # feature_sizes = [8, 16, 32, 64, 128, 256, 512, 1024, 2048]
-    # feature_sizes = [2048, 1024, 512, 256, 128, 64, 32, 16, 8]
-    # feature_sizes = [16]#, 32, 64, 128, 256, 512, 1024, 2048]
+    feature_sizes = [2048, 1024, 512, 256, 128, 64, 32, 16, 8]
 
 
 
@@ -268,7 +266,7 @@ def main_resnet():
         # add config for which resnet you used, decay lr or not
 
 
-        model_cub200, train_loss_cub200, training_accuracy_cub200, val_loss_cub200, val_acc_cub200 = train_and_evaluate("CUB-200", model, optimizer, scheduler, lr,
+        model_cub200, train_loss_cub200, training_accuracy_cub200, val_loss_cub200, val_acc_cub200 = train_and_evaluate(dataset_names, model, optimizer, scheduler, lr,
                                                                       criterion, trainloader_cub200, 
                                                                       testloader_cub200, use_early_stopping,
                                                                       device, num_classes_cub200, metrics_logger,
@@ -361,10 +359,10 @@ def main_resnet():
     for feature_size in feature_sizes:
 
         # model_cub200 = resnet50.ResNet50(feature_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
-        model_cub200 = ResNet50_conv(feature_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
-
-        fine_tuned_weights = torch.load(f'{load_dir}/resnet50_{feature_size}_CUB-200_batchsize_{batch_size}_lr_{lr}.pth')
-        save_dir = "/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb/data/resnet50_finetuned/experiment_gpu_1/weights"
+        model_cub200 = ResNet50_convV2(feature_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)
+        
+        fine_tuned_weights = torch.load(f'{load_dir}/resnet50_feature_size_{feature_size}_{dataset_names}_batchsize_{batch_size}_lr_{lr}.pth')
+        # save_dir = "/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb/data/resnet50_finetuned/experiment_gpu_1/weights"
         model_cub200.load_state_dict(fine_tuned_weights)
         model_cub200.feature_extractor_mode()
 

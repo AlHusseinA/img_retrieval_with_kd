@@ -7,16 +7,16 @@ print(sys.path)
 import torch
 import torch.nn as nn
 import os
-# from dataloaders.cifar10 import DataLoaderCIFAR10
+import numpy as np
+import random
+
 from torchvision.models import resnet50, ResNet50_Weights
 from dataloaders.cub200loader import DataLoaderCUB200
 from models.resnet50_vanilla import ResNet50_vanilla
 from models.resnet50_conv_compressionV2 import ResNet50_convV2, ResNet50_convV3_BN
 
-from optimizers.sgd_var_lr_test import SGDOptimizerVariableLR
-from optimizers.adam import AdamOptimizer
 from optimizers.adam_lr_var_test import AdamOptimizerVar
-from schedulers.cosine import CosineAnnealingLRWrapper, CosineAnnealingLRWrapperWithWarmup
+from schedulers.cosine import CosineAnnealingLRWrapperWithWarmup
 from trainers.vanilla_trainer_resnet50 import ResnetTrainer_test
 from loss.ce import CustomCrossEntropyLoss
 
@@ -24,8 +24,7 @@ import matplotlib.pyplot as plt
 from utils.similarities import evaluate_on_retrieval
 from utils.features_unittest import TestFeatureSize
 from utils.debugging_functions import create_subset_data
-import numpy as np
-import random
+
 
 
 def main_resnet_test():

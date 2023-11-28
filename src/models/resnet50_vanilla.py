@@ -24,6 +24,11 @@ class ResNet50_vanilla(nn.Module):
         # Fully connected layer for CUB-200
         self.fc = nn.Linear(in_features, num_classes)
         
+    def fine_tune_mode(self):
+        """Activate fine-tuning mode: classification head active and all weights trainable."""
+        for param in self.parameters():
+            param.requires_grad = True    
+
     def forward(self, x):
         # Set to eval mode if flag is True
         if self.set_eval_mode:

@@ -153,7 +153,7 @@ class ResnetTrainer():
 
         running_loss = 0.0
         # self.metric_eval
-        
+
         with torch.inference_mode():
             # for images, labels in self.testloader:
             for batch_idx, (images, labels) in enumerate(self.testloader):
@@ -182,82 +182,10 @@ class ResnetTrainer():
 
         # accuracy_over_epoch should be a 
         return avg_loss_over_batch, epoch_accuracy_eval  # Return the list of batch losses
-    
-
-    # def plot_metrics(self, train_losses, test_losses, train_accuracies, test_accuracies):
-    #     # x-axis is actual epochs run not pre-defined epochs since we're using early stopping
-    #     epochs_range = range(self.actual_epochs_run)
-    #     plot_id = f"{self.dataset_name}_ResNet50_FeatureSize_{self.feature_size}"
-    
-    #     # Function to plot generic metrics
-    #     def plot_generic_metrics(epochs_range, train_metric, test_metric, metric_name, ylabel):
-    #         if len(epochs_range) != len(train_metric) or len(epochs_range) != len(test_metric):
-    #             raise ValueError(f"Mismatch in lengths: epochs_range ({len(epochs_range)}), train_metric ({len(train_metric)}), test_metric ({len(test_metric)})")
-
-    #         plt.figure(figsize=(14, 10))  
-    #         plt.title(f"Feature size {self.feature_size}")
-    #         plt.plot(epochs_range, train_metric, label=f'Training {metric_name}')
-    #         plt.plot(epochs_range, test_metric, label=f'Testing {metric_name}')
-    #         plt.xlabel('Epochs')
-    #         plt.ylabel(ylabel)
-    #         plt.title(f'Training and Testing {metric_name} over Epochs - {plot_id}')
-    #         plt.legend()
-    #         plt.savefig(f"{self.log_save_path}_{metric_name}_{plot_id}.png")
-    #         # plt.show()
-
-
-    #     # Plot training and validation loss over epochs
-    #     plot_generic_metrics(epochs_range, train_losses, test_losses, 'Loss', 'Loss')
-
-    #     # Plot training and validation accuracy over epochs
-    #     plot_generic_metrics(epochs_range, train_accuracies, test_accuracies, 'Accuracy', 'Accuracy (%)')
-
-
-    # def plot_metrics(self, train_losses, test_losses, train_accuracies, test_accuracies):
-    #     epochs_range = range(self.actual_epochs_run)
-    #     plot_id = f"{self.dataset_name}_ResNet50_FeatureSize_{self.feature_size}"
-
-    #     def plot_generic_metrics(epochs_range, train_metric, test_metric, metric_name, ylabel):
-    #         if len(epochs_range) != len(train_metric) or len(epochs_range) != len(test_metric):
-    #             raise ValueError(f"Mismatch in lengths: epochs_range ({len(epochs_range)}), train_metric ({len(train_metric)}), test_metric ({len(test_metric)})")
-
-    #         plt.figure(figsize=(14, 10))
-    #         plt.plot(epochs_range, train_metric, label=f'Training {metric_name}')
-    #         plt.plot(epochs_range, test_metric, label=f'Testing {metric_name}')
-    #         plt.xlabel('Epochs')
-    #         plt.ylabel(ylabel)
 
 
 
-    #         # Determine if we are looking for max or min and set the appropriate title
-    #         if 'Loss' in metric_name:
-    #             min_loss_epoch, min_loss_value = min(enumerate(train_metric), key=lambda x: x[1])
-    #             annotate_text = f"{min_loss_value:.4f}"
-    #             # Adjust the position of the annotation text
-    #             text_position = (min_loss_epoch, min_loss_value * 1.05)  # slightly above the actual point
-    #             arrowprops_dict = dict(facecolor='red', arrowstyle='wedge,tail_width=0.3', shrinkA=10, shrinkB=5, linewidth=1.5)
-    #         else:
-    #             max_acc_epoch, max_acc_value = max(enumerate(train_metric), key=lambda x: x[1])
-    #             annotate_text = f"{max_acc_value:.2f}%"
-    #             # Adjust the position of the annotation text
-    #             text_position = (max_acc_epoch, max_acc_value * 0.95)  # slightly below the actual point
-    #             arrowprops_dict = dict(facecolor='green', arrowstyle='wedge,tail_width=0.3', shrinkA=10, shrinkB=5, linewidth=1.5)
-
-    #         # Annotate the plot with the highest/lowest value
-    #         plt.annotate(annotate_text,
-    #                     xy=(max_acc_epoch, max_acc_value) if 'Accuracy' in metric_name else (min_loss_epoch, min_loss_value),
-    #                     xytext=text_position,
-    #                     arrowprops=arrowprops_dict,
-    #                     fontsize=12)
-
-    #         plt.title(f'Training and Testing {metric_name} over Epochs - {plot_id}')
-    #         # plt.legend()
-    #         plt.legend(loc='upper left')
-    #         plt.savefig(f"{self.log_save_path}_{metric_name}_{plot_id}.png")
-    #         # plt.show()
-
-    #     plot_generic_metrics(epochs_range, train_losses, test_losses, 'Loss', 'Loss')
-    #     plot_generic_metrics(epochs_range, train_accuracies, test_accuracies, 'Accuracy', 'Accuracy (%)')
+  
 
     def plot_metrics(self, train_losses, test_losses, train_accuracies, test_accuracies):
         epochs_range = range(self.actual_epochs_run)
