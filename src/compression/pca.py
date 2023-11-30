@@ -6,19 +6,19 @@ import numpy as np
 from sklearn.decomposition import PCA
 
 class PCAWrapper:
-    def __init__(self, n_components, compression_level):
+    def __init__(self, n_components, num_components_to_keep):
         self.n_components = n_components
-        self.compression_level = compression_level
+        # self.compression_level = compression_level
         self.pca = PCA(n_components=self.n_components)
 
     def compress(self, feature_vector):
         # Fit PCA on the feature vector
         self.pca.fit(feature_vector)
 
-        # Calculate the number of components to keep based on the compression level
-        num_components_to_keep = int(self.n_components * self.compression_level)
+        # # Calculate the number of components to keep based on the compression level
+        # num_components_to_keep = int(self.n_components * self.compression_level)
 
         # Transform the feature vector to the compressed vector
-        compressed_vector = self.pca.transform(feature_vector)[:, :num_components_to_keep]
+        compressed_vector = self.pca.transform(feature_vector)[:, :self.num_components_to_keep]
 
         return compressed_vector

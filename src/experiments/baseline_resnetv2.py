@@ -5,13 +5,13 @@ print(sys.path)
 import torch
 import torch.nn as nn
 import os
-# from dataloaders.cifar10 import DataLoaderCIFAR10
+
 from exp_logging.metricsLogger import MetricsLogger
 from torchvision.models import resnet50, ResNet50_Weights
 from datetime import datetime
 import yaml
 from dataloaders.cub200loader import DataLoaderCUB200
-# from utils.metrics import calculate_map, calculate_recall_at_k
+
 import models.resnet50 as resnet50
 from models.resnet50_conv_compession import ResNet50_conv
 
