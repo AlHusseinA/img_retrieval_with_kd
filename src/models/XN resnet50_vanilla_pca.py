@@ -5,7 +5,7 @@ from compression.pca import PCAWrapper
 
 class ResNet50_vanilla_with_PCA(nn.Module):
     def __init__(self, num_classes=200, pca_components=2048, num_components_to_keep=8, set_eval_mode=False, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None, **kwargs):
-        super(ResNet50_vanilla, self).__init__()
+        super().__init__()
         
         self.resnet50 = resnet50(weights=weights)
         self.num_classes = num_classes
@@ -24,6 +24,13 @@ class ResNet50_vanilla_with_PCA(nn.Module):
     def fine_tune_mode(self):
         for param in self.parameters():
             param.requires_grad = True
+
+# add a feature extractor mode  
+    # def feature_extractor_mode(self):
+    #     for param in self.parameters():
+    #         param.requires_grad = False
+            
+    #     self.fc = nn.Identity()  # Remove classification head
 
     def fit_pca(self, feature_batch):
         """Fit PCA on a batch of features."""

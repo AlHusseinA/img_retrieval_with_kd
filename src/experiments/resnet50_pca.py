@@ -18,7 +18,7 @@ from compression.pca import PCAWrapper
 # import models.resnet50 as resnet50
 # from models.resnet50_conv_compession import ResNet50_conv
 # from models.resnet50_conv_compressionV2 import ResNet50_convV2, ResNet50_convV3_BN
-from models.resnet50_vanilla_pca import ResNet50_vanilla_with_PCA
+# from models.resnet50_vanilla_pca import ResNet50_vanilla_with_PCA
 from models.resnet50_vanilla import ResNet50_vanilla
 
 import matplotlib.pyplot as plt
@@ -67,7 +67,7 @@ def load_resnet50_unmodifiedVanilla(num_classes_cub200,feature_size, dataset_nam
     # resnet50_feature_size_vanilla_cub200_batchsize_256_lr_7e
 
     model.load_state_dict(fine_tuned_weights)
-    model.feature_extractor_mode()
+    # model.feature_extractor_mode()
     #unit test for feature size
     testing_size = TestFeatureSize(model, feature_size) # this will confirm that the feature size is correct
     try:
@@ -111,7 +111,7 @@ def main_resnet_pca():
 
     print(f"Weights will be loaded from: {load_dir}")
     # print(f"Weight files will be saved in: {save_dir}")
-    print(f"Log files will be saved in: {log_save_folder}")
+    print(f"Log files for this PCA experiment will be saved in: {log_save_folder}")
     #####################
    
     #####################
@@ -128,7 +128,7 @@ def main_resnet_pca():
     n_components=2048
     compressed_features_size=128 
 
-    compression_level= compressed_features_size/n_components
+    compression_level= float(compressed_features_size/n_components)
 
 
     DEBUG_MODE = True
@@ -139,7 +139,7 @@ def main_resnet_pca():
     num_classes_cub200 = dataloadercub200.get_number_of_classes()
 
     if DEBUG_MODE:
-        # create small subset of data to make debuggin faster
+        # create small subset of data to make debugging faster
         trainloader_cub200_dump, testloader_cub200_dump = dataloadercub200.get_dataloaders()
         trainloader_cub200, testloader_cub200, batch_size = create_subset_data(trainloader_cub200_dump, testloader_cub200_dump, batch_size=32)
         epochs = 5
@@ -156,7 +156,7 @@ def main_resnet_pca():
     #### print hyperparameters #####
     print("/\\"*30)
     print(f"You are using batch size: {batch_size}")
-    print(f"You are compressing features from {n_components} to {compressed_features_size} size. Compression level is: {compression_level}")
+    print(f"You are compressing features from {n_components} dimensions to {compressed_features_size} dimensions size. Compression level is: {compression_level}")
     print(f"You are using epochs: {epochs}")
     print(f"With Learning rate: {lr}")
     print(f"You are using early stopping: {use_early_stopping}")
@@ -166,6 +166,7 @@ def main_resnet_pca():
     # load model
     # model = load_resnet50_convV2(num_classes_cub200,n_components, "cub200", batch_size, lr, load_dir)
     model = load_resnet50_unmodifiedVanilla(num_classes_cub200,n_components, "cub200", batch_size, lr, load_dir)
+    model.feature_extractor_mode()
     # model = ResNet50_vanilla_with_PCA(num_classes_cub200, n_components, compressed_features_size)
     # test on classification
 

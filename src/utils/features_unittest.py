@@ -1,7 +1,6 @@
 import unittest
 import torch
-import models.resnet50 as resnet50
-from models.resnet50  import ResNet50  
+
 
 
 
