@@ -52,10 +52,10 @@ class ResnetTrainer_test:
     
     def train(self, train_loader, val_loader, num_epochs):
         # Initialize counters for the total number of correct predictions and the total number of samples
-        total_correct_train = 0
-        total_samples_train = 0
-        total_correct_val = 0
-        total_samples_val = 0
+        # total_correct_train = 0
+        # total_samples_train = 0
+        # total_correct_val = 0
+        # total_samples_val = 0
         
         for epoch in range(num_epochs):
             self.resnet50.train()
@@ -98,7 +98,7 @@ class ResnetTrainer_test:
 
             # Validation phase
             self.resnet50.eval()
-            with torch.no_grad():
+            with torch.inference_mode():
                 for inputs, labels in val_loader:
                     inputs, labels = inputs.to(self.device), labels.to(self.device)
 

@@ -1,3 +1,4 @@
+
 import sys
 import os
 
@@ -7,8 +8,10 @@ print(f"{sys.path=}")
 print(f"{os.getcwd()=}")
 import torch
 import torch.nn as nn
+import torch.nn.init as init
 
-
+from schedulers.cosine import CosineAnnealingLRWrapper
+from optimizers.adam_for_fc import AdamOptimizerFC
 from exp_logging.metricsLogger import MetricsLogger
 from torchvision.models import resnet50, ResNet50_Weights
 from datetime import datetime
@@ -22,17 +25,29 @@ from compression.pca import PCAWrapper
 from models.resnet50_vanilla import ResNet50_vanilla
 
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+
 # from utils.gallery import extract_gallery_features
 from utils.similarities import evaluate_on_retrieval
 # from utils.helper_functions import plot_multiple_metrics
 from utils.features_unittest import TestFeatureSize
 from utils.debugging_functions import create_subset_data
+from utils.pca_fit_features import pca_fit_features
+from utils.helpers_for_pca_exp import generate_and_process_features, make_predictions_model
+
+# from trainers.train_eval_fc_pca import train_eval_fc_pca
+from trainers.fc_trainer import fc_trainer
 import numpy as np
 import random
+
 
 # for debugging
 from torch.utils.data import Subset
 
+
+def create_optimizer_fc(model, lr, weight_decay):        
+    optimizer = AdamOptimizerFC(model, lr=lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+    return optimizer.get_optimizer()
 
 def ensure_directory_exists(directory_path):
     if not os.path.exists(directory_path):
@@ -40,6 +55,8 @@ def ensure_directory_exists(directory_path):
         print(f"Directory {directory_path} created.")
     else:
         print(f"Directory {directory_path} already exists.")
+
+
 
 # def load_resnet50_convV2(num_classes_cub200,feature_size, dataset_name, batch_size, lr, load_dir):
 #     model = ResNet50_convV2(feature_size, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None)        
@@ -70,6 +87,7 @@ def load_resnet50_unmodifiedVanilla(num_classes_cub200,feature_size, dataset_nam
     # model.feature_extractor_mode()
     #unit test for feature size
     testing_size = TestFeatureSize(model, feature_size) # this will confirm that the feature size is correct
+    assert model is not None, "Failed to load the model"
     try:
         testing_size.test_feature_size()
         print(f"The loaded model under evaluation is in indeed with {feature_size} feature size!")
@@ -78,6 +96,8 @@ def load_resnet50_unmodifiedVanilla(num_classes_cub200,feature_size, dataset_nam
         # add an error message to the assertion error
         e.args += (f"Expected feature size {feature_size}, got {model.features_out.in_features}")   
         raise e # if the feature size is not correct, raise an error
+    
+
     return model
 
 
@@ -98,20 +118,21 @@ def main_resnet_pca():
     print(f"Device name: {torch.cuda.get_device_name()}")
     #####################
     ###### prep directories ######
-    data_root ="/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb/data/cub200/"
+    data_root ="/media/alabutaleb/data/cub200/"
 
     # load_dir = f"/home/alabutaleb/Desktop/confirmation/baselines_allsizes/weights"   
     load_dir = f"/home/alabutaleb/Desktop/confirmation"    
-    pca_weights = f"/home/alabutaleb/Desktop/confirmation/pca_weights"
-    ensure_directory_exists(pca_weights)
-    pca_logs = f"/home/alabutaleb/Desktop/confirmation/pca_logs"
+    # pca_weights = f"/home/alabutaleb/Desktop/confirmation/pca_weights"
+    # ensure_directory_exists(pca_weights)
+    pca_logs = f"/home/alabutaleb/Desktop/confirmation/kd_logs"
     # log_save_path = f"/home/alabutaleb/Desktop/confirmation/"
-    log_save_folder = os.path.join(pca_logs, f"logs_gpu_{gpu_id}")
-    os.makedirs(log_save_folder, exist_ok=True)
+    log_save_folder_kd = os.path.join(pca_logs, f"logs_gpu_{gpu_id}")
+    os.makedirs(log_save_folder_kd, exist_ok=True)
+    ensure_directory_exists(log_save_folder_kd)
 
     print(f"Weights will be loaded from: {load_dir}")
     # print(f"Weight files will be saved in: {save_dir}")
-    print(f"Log files for this PCA experiment will be saved in: {log_save_folder}")
+    print(f"Log files for this KD experiment will be saved in: {log_save_folder_kd}")
     #####################
    
     #####################
@@ -123,15 +144,16 @@ def main_resnet_pca():
     #### hyperparameters #####
     batch_size  = 256
     warmup_epochs=20 
+    lr=0.00007 # best for baseline experiments
+ 
+    weight_decay = 2e-05
+    whiten = False
+    # whiten = True
 
-    lr=0.00007
-    n_components=2048
-    compressed_features_size=128 
-
-    compression_level= float(compressed_features_size/n_components)
+    # compression_level= float(compressed_features_size/n_components)
 
 
-    DEBUG_MODE = True
+    DEBUG_MODE = False
     use_early_stopping=True
 
     #### get data #####root, batch_size=32,num_workers=10   
@@ -139,6 +161,7 @@ def main_resnet_pca():
     num_classes_cub200 = dataloadercub200.get_number_of_classes()
 
     if DEBUG_MODE:
+        # Beware that if in debug_mode then batch size will always be 32
         # create small subset of data to make debugging faster
         trainloader_cub200_dump, testloader_cub200_dump = dataloadercub200.get_dataloaders()
         trainloader_cub200, testloader_cub200, batch_size = create_subset_data(trainloader_cub200_dump, testloader_cub200_dump, batch_size=32)
@@ -147,28 +170,25 @@ def main_resnet_pca():
         last_epoch = -1
     else:
         trainloader_cub200, testloader_cub200 = dataloadercub200.get_dataloaders()
-        epochs = 1000
+        epochs = 40
         T_max=int(epochs/2)
         last_epoch = -1
 
 
    
-    #### print hyperparameters #####
-    print("/\\"*30)
-    print(f"You are using batch size: {batch_size}")
-    print(f"You are compressing features from {n_components} dimensions to {compressed_features_size} dimensions size. Compression level is: {compression_level}")
-    print(f"You are using epochs: {epochs}")
-    print(f"With Learning rate: {lr}")
-    print(f"You are using early stopping: {use_early_stopping}")
-    print("/\\"*30)
+    # > Logic:
+    # 1. Load vanilla
+    # 2. Set feature extractor mode to remove last layer AND to freeze all the weights
+    # 3. Pass trainloader through the model.
+    # 4. Fit via PCA
+    # 5. Return PCA
+    # 6. Pass testloader through the model
+    # 7. Now, train and evaluate fc layer
+    # 8. Fit the new features (generated from testLoader) to the PCA
+    # 9. Now pass these new features via the fc layer and evaluate classification performance
 
-
-    # load model
-    # model = load_resnet50_convV2(num_classes_cub200,n_components, "cub200", batch_size, lr, load_dir)
-    model = load_resnet50_unmodifiedVanilla(num_classes_cub200,n_components, "cub200", batch_size, lr, load_dir)
-    model.feature_extractor_mode()
-    # model = ResNet50_vanilla_with_PCA(num_classes_cub200, n_components, compressed_features_size)
-    # test on classification
+  
+    criterion = nn.CrossEntropyLoss()
 
     # TODO send logs directory
     # TODO send save directory for resnet after linear probing

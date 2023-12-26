@@ -15,6 +15,17 @@ class PCAWrapper:
 # 3. in all cases does the gallery features also needs to be compressed? If so, how I extract the original image from the gallery so I can view it?    
 
 # ADD torch to numpy conversion sanity check 
+# add the code below to explore fitting the pca to the whole dataset:
+# from sklearn.decomposition import IncrementalPCA
+
+# n_batches = 100
+# inc_pca = IncrementalPCA(n_components=154)
+# for X_batch in np.array_split(X_train, n_batches):
+#     print(".", end="") # not shown in the book
+#     inc_pca.partial_fit(X_batch)
+
+# X_reduced = inc_pca.transform(X_train)
+
 
 
     def __init__(self, n_components=8):

@@ -47,3 +47,5 @@ class ResNet50_vanilla(nn.Module):
         # Forward pass through fully connected layer
         x = self.fc(x)
         return x
+
+

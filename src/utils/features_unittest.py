@@ -21,7 +21,7 @@ class TestFeatureSize(unittest.TestCase):
         x = torch.randn(1, 3, 224, 224)  # Assuming the input size is (3, 224, 224)==> [batch_size, channels, height, width]
         
         # Forward pass
-        with torch.inference_mode():  # Use torch.no_grad() if torch.inference_mode() is not available in your PyTorch version
+        with torch.inference_mode():  # Use torch.inference_mode() if torch.inference_mode() is not available in your PyTorch version
             features = self.model(x)
         
         # Check the feature size

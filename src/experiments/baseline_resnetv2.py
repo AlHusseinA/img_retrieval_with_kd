@@ -116,14 +116,14 @@ def main_resnet():
     print(f"Device name: {torch.cuda.get_device_name()}")
     #####################
     #### directory to save fine tuned weights #####
-    base_directory = "/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb/data/resnet50_finetuned"
-    # weight_save_path =  "/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb/data/resnet50_finetuned"
-    data_root ="/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb/data/cub200/"
+    base_directory = "/media/alabutaleb/data/resnet50_finetuned"
+    # weight_save_path =  "/media/alabutaleb/data/resnet50_finetuned"
+    data_root ="/media/alabutaleb/data/cub200/"
 
 
     # Construct the dynamic directory path
-    load_dir = f"/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb/data/resnet50_finetuned/experiment_gpu_{gpu_id}/weights"
-    # load_dir = "/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb/data/resnet50_finetuned/experiment_gpu_1/weights"
+    load_dir = f"/media/alabutaleb/data/resnet50_finetuned/experiment_gpu_{gpu_id}/weights"
+    # load_dir = "/media/alabutaleb/data/resnet50_finetuned/experiment_gpu_1/weights"
     #####################
     # base_directory = "./experiments_results"
     # unique_directory = os.path.join(base_directory, f"experiment_gpu_{gpu_id}")
