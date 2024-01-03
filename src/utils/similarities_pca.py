@@ -2,14 +2,14 @@ import numpy as np
 import torch
 from torch.nn import CosineSimilarity
 from exp_logging.metricsLogger import MetricsLogger
-from utils.helpers_functions_retrieval import normalize_features
+from utils.metrics import calculate_map, calculate_recall_at_k
 import time
 
 from tqdm import tqdm
 from torchmetrics.retrieval import RetrievalMAP, RetrievalRecall
+# from torchmetrics.retrieval.base import RetrievalMetric
 
-
-def image_retrieval(single_query_feature, gallery_features, device=None):
+def image_retrieval_pca(single_query_feature, gallery_features, device=None):
     """
     This function takes a query feature and a set of gallery features and computes the similarity scores 
     between the query and each gallery feature using cosine similarity. It then sorts these scores 
@@ -38,13 +38,6 @@ def image_retrieval(single_query_feature, gallery_features, device=None):
     if len(single_query_feature.shape) != 2 or len(gallery_features.shape) != 2:
         raise ValueError("Query feature and gallery features must be 2D arrays")
     
-
-
-    # Normalize the query and gallery features to unit length
-    single_query_feature = single_query_feature / single_query_feature.norm(dim=1, keepdim=True)
-    gallery_features = gallery_features / gallery_features.norm(dim=1, keepdim=True)
-
-
     # Create an instance of the torch.nn.CosineSimilarity class and compute cosine similarity scores
     similarity_scores = []
     cos_sim = CosineSimilarity(dim=1, eps=1e-6)
@@ -56,37 +49,33 @@ def image_retrieval(single_query_feature, gallery_features, device=None):
     similarity_scores = cos_sim(gallery_features, single_query_feature)
 
     sorted_scores, sorted_indices = torch.sort(similarity_scores, descending=True)
-
+   
     return similarity_scores, sorted_scores, sorted_indices
 
-def create_gallery_features(model, trainloader, batch_size=32, shuffle=False, device=None):
+def create_gallery_features_pca(compressed_train_feature_batches, trainloader, device=None):
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model.eval()
-    counter=0
-    gallery_features, gallery_labels = [], []
+    # Convert each batch to a PyTorch tensor if it's not already
+    tensor_batches = [torch.from_numpy(batch) if isinstance(batch, np.ndarray) else batch for batch in compressed_train_feature_batches]
 
-    pbar = tqdm(total=len(trainloader), desc="Creating Gallery features", unit="Batches")
+    # Concatenate all feature batches to form gallery_features
+    gallery_features = torch.cat(tensor_batches, dim=0).to(device)
 
-    for images, labels in trainloader:
-        images, labels = images.to(device), labels.to(device)
-        counter+=1
-
-        with torch.inference_mode():
-            output = model(images)
-
-        gallery_features.append(output)
+    # Extract labels from trainloader
+    gallery_labels = []
+    for _, labels in trainloader:
         gallery_labels.extend(labels.tolist())
-        pbar.update(1)
-        pbar.set_postfix({"Message": f"Creating Gallery features {counter}"})
 
-    gallery_features = torch.vstack(gallery_features)
-    gallery_labels = torch.tensor(gallery_labels, device=device)    
-
+    gallery_labels = torch.tensor(gallery_labels, device=device)
     return gallery_features, gallery_labels
 
 
 
-def evaluate_on_retrieval(model, trainloader, testloader, batch_size=32, shuffle=False, device=None):
+
+
+# def evaluate_on_retrieval(model, trainloader, testloader, metrics_logger_retrieval, batch_size=32, shuffle=False, device=None):
+def evaluate_on_retrieval_pca(model, compressed_train_feature_batches, trainloader, compressed_test_feature_batches, testloader, batch_size=32, device=None):
 
     """
 
@@ -106,10 +95,14 @@ def evaluate_on_retrieval(model, trainloader, testloader, batch_size=32, shuffle
 
 
     # 2. Extract features for gallery
-    gallery_features, gallery_labels = create_gallery_features(model, trainloader, batch_size=batch_size, shuffle=shuffle, device=device)
+    # gallery_features, gallery_labels = create_gallery_features_pca(model, trainloader, batch_size=batch_size, shuffle=shuffle, device=device)
+    gallery_features, gallery_labels = create_gallery_features_pca(compressed_train_feature_batches, trainloader, device=device)
 
     # Initialize metrics
-
+    # mAPs = []
+    # Rs = []
+    Rs = {1: [], 5: [], 10: []}
+    # all_query_features = []
     model.eval()
 
     rmap = RetrievalMAP()
@@ -124,36 +117,46 @@ def evaluate_on_retrieval(model, trainloader, testloader, batch_size=32, shuffle
     # start_time = time.time()
     pbar = tqdm(total=len(testloader), desc="Calculating mAP/Rs", unit="Batches")
 
-    for query_images, query_labels in testloader:
-        query_images, query_labels = query_images.to(device), query_labels.to(device)
+    # for query_features_batch, (_, query_labels_batch) in zip(compressed_test_feature_batches, testloader):
+        # query_features_batch, query_labels_batch = query_features_batch.to(device), query_labels_batch.to(device)
+
+    for query_features_batch, (_, query_labels_batch) in zip(compressed_test_feature_batches, testloader):
+        # Convert query_features_batch to a PyTorch tensor if it's a NumPy array
+        if isinstance(query_features_batch, np.ndarray):
+            query_features_batch = torch.from_numpy(query_features_batch)
+        # Convert query_labels_batch to a PyTorch tensor if it's a NumPy array
+        if isinstance(query_labels_batch, np.ndarray):
+            query_labels_batch = torch.from_numpy(query_labels_batch)
+
+        # Now safely move to the device
+        query_features_batch, query_labels_batch = query_features_batch.to(device), query_labels_batch.to(device)
+
+
+
         counter+=1
         if TEST_FLAG==0:
             start_time = time.time()
             # TEST_FLAG=1
 
         with torch.inference_mode():
-            # features for a batch of query images passed through the model
-            query_features = model(query_images)         
+        
              # and in the batch you just producd, take each image features one by one as a query and test image retrieval
-            for single_query_feature, single_query_label in zip(query_features, query_labels):
-                # # because zip will turn single_query_lable to a scalar tensor
-                # sorted_scores, sorted_indices = image_retrieval(single_query_feature, gallery_features, device)   
+            for single_query_feature, single_query_label in zip(query_features_batch, query_labels_batch):
+
                 # ##########################################  
-                similarity_scores2, _, _ = image_retrieval(single_query_feature, gallery_features, device)   
+                similarity_scores2, _, _ = image_retrieval_pca(single_query_feature, gallery_features, device)   
                 ##########################################             
                 ground_truths = (gallery_labels == single_query_label).int()
-             
-
 
                 indexes_tensor = torch.full_like(similarity_scores2, query_idx_counter, dtype=torch.long)
+
                 rmap.update(preds=similarity_scores2, target=ground_truths, indexes=indexes_tensor)
                 r1.update(preds=similarity_scores2, target=ground_truths, indexes=indexes_tensor)
                 r5.update(preds=similarity_scores2, target=ground_truths, indexes=indexes_tensor)
                 r10.update(preds=similarity_scores2, target=ground_truths, indexes=indexes_tensor)
 
- 
-
                 query_idx_counter += 1  # Increment the query index counter
+
 
         pbar.update(1)
         pbar.set_postfix({"Message": f"Calculating retrieval metrics for batch {counter}"})
@@ -166,17 +169,11 @@ def evaluate_on_retrieval(model, trainloader, testloader, batch_size=32, shuffle
             print(f"Time taken to process this batch of {batch_counter} images/features: {elapsed_time:.4f} seconds, {elapsed_time_minutes:.4f} minutes, {elapsed_time_hours:.4f} hours")
             # TEST_FLAG=1
 
-            
-
-
         batch_counter += 1  # Increment the batch counter
 
         if batch_counter % N == 0:
             print(f"Processing batch {batch_counter} of {total_batches} in this image retrieval evaluation")
 
-    # just in case we need it        
-    # all_query_features = torch.vstack(all_query_features) 
-    # query_features = torch.cat((query_features, query_features), dim=0)  # Concatenate along the first dimension
     
     final_map = rmap.compute()
     final_r1 = r1.compute()
@@ -184,16 +181,12 @@ def evaluate_on_retrieval(model, trainloader, testloader, batch_size=32, shuffle
     final_r10 = r10.compute()
     # 5. Return the metrics as a dictionary
     metrics = {
-        # 'mAP': torch.mean(final_map.clone().detach().to(device)).item(),
-        # 'mAP': torch.Tensor(final_map.clone().detach().to(device)).item(),
+        
         'mAP': final_map.item(),
         'R@1': final_r1.item(),
         'R@5': final_r5.item(),
         'R@10': final_r10.item(),
 
-
-
         }
 
     return metrics
-

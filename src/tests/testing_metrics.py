@@ -2,6 +2,8 @@
 import sys
 sys.path.append('/home/alabutaleb/Desktop/myprojects/compression_retrieval_proj/mvp/src')
 print(sys.path)
+
+
 from utils.metrics import calculate_map, compute_metrics
 import numpy as np
 
@@ -90,6 +92,10 @@ def test_compute_metrics():
         assert recall_at_k[k] == expected_recall_at_k[k], f"R@{k} should be {expected_recall_at_k[k]}"
 
     print("compute_metrics passed")
+
+
+
+
 
 if __name__ == "__main__":
     test_calculate_map()

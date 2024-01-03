@@ -6,7 +6,7 @@ from torchmetrics.classification import Accuracy
 import torch.nn.functional as F
 
 class KnowledgeDistillationTrainer:
-    def __init__(self, teacher_model, student_model, criterion, optimizer, num_classes, device, use_early_stopping, scheduler=None):
+    def __init__(self, teacher_model, student_model, criterion, optimizer, scheduler, num_classes, device, use_early_stopping):
         self.device = device if device else torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.teacher_model = teacher_model.to(self.device)  # this is vanilla unmodified resnet50
         self.student_model = student_model.to(self.device)  # this is resnet50 with final features layer compressed

@@ -9,12 +9,10 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 
-from schedulers.cosine import CosineAnnealingLRWrapper
 from optimizers.adam_for_fc import AdamOptimizerFC
 from exp_logging.metricsLogger import MetricsLogger
 from torchvision.models import resnet50, ResNet50_Weights
 from datetime import datetime
-import yaml
 from dataloaders.cub200loader import DataLoaderCUB200
 from compression.pca import PCAWrapper
 # import models.resnet50 as resnet50
@@ -27,15 +25,14 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 
 # from utils.gallery import extract_gallery_features
-from utils.similarities import evaluate_on_retrieval
+from utils.similarities_pca import evaluate_on_retrieval_pca
 # from utils.helper_functions import plot_multiple_metrics
 from utils.features_unittest import TestFeatureSize
 from utils.debugging_functions import create_subset_data
 from utils.pca_fit_features import pca_fit_features
-from utils.helpers_for_pca_exp import generate_and_process_features, make_predictions_model
+from utils.helpers_for_pca_exp import generate_and_process_features, make_predictions_model, batch_features
 
 # from trainers.train_eval_fc_pca import train_eval_fc_pca
-from trainers.fc_trainer import fc_trainer
 import numpy as np
 import random
 
@@ -44,9 +41,6 @@ import random
 from torch.utils.data import Subset
 
 
-def create_optimizer_fc(model, lr, weight_decay):        
-    optimizer = AdamOptimizerFC(model, lr=lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-    return optimizer.get_optimizer()
 
 def ensure_directory_exists(directory_path):
     if not os.path.exists(directory_path):
@@ -55,6 +49,32 @@ def ensure_directory_exists(directory_path):
     else:
         print(f"Directory {directory_path} already exists.")
 
+# def log_retrieval_metrics( feature_size, metrics, dataset_name):
+#     # Consistency check
+#     # print(f"metrics.keys(): {metrics.keys()}")
+#     # print(f"set(metrics.keys()): {set(metrics.keys())}")
+#     # print(f"metrics: {metrics}")
+#     assert set(metrics.keys()) == {'mAP', 'R@1', 'R@5', 'R@10'}, "Unexpected metrics keys"
+
+#     # Initialize data structure
+#     if feature_size not in data:
+#         data[feature_size] = {}
+    
+#     if 'retrieval' not in data[feature_size]:
+#         data[feature_size]['retrieval'] = {'mAP': [], 'R@1': [], 'R@5': [], 'R@10': []}
+
+#     # Log metrics
+#     for key, value in metrics.items():
+#         data[feature_size]['retrieval'][key].append(value)  # Convert tensor to Python number
+
+#     # Create logs directory if it doesn't exist
+#     if not os.path.exists("./logs"):
+#         os.makedirs("./logs")
+
+#     # Save to JSON
+#     json_file_path = f"./logs/retrieval_metrics_{feature_size}_{dataset_name}.json"
+#     with open(json_file_path, 'w') as file:
+#         json.dump(data[feature_size]['retrieval'], file)
 
 
 # def load_resnet50_convV2(num_classes_cub200,feature_size, dataset_name, batch_size, lr, load_dir):
@@ -121,11 +141,11 @@ def main_resnet_pca():
 
     # load_dir = f"/home/alabutaleb/Desktop/confirmation/baselines_allsizes/weights"   
     load_dir = f"/home/alabutaleb/Desktop/confirmation"    
-    pca_weights = f"/home/alabutaleb/Desktop/confirmation/pca_weights"
-    ensure_directory_exists(pca_weights)
-    pca_logs = f"/home/alabutaleb/Desktop/confirmation/pca_logs"
+    # pca_weights = f"/home/alabutaleb/Desktop/confirmation/pca_weights"
+    # ensure_directory_exists(pca_weights)
+    pca_retrieval_logs = f"/home/alabutaleb/Desktop/confirmation/pca_retrieval_logs"
     # log_save_path = f"/home/alabutaleb/Desktop/confirmation/"
-    log_save_folder = os.path.join(pca_logs, f"logs_gpu_{gpu_id}")
+    log_save_folder = os.path.join(pca_retrieval_logs, f"logs_gpu_{gpu_id}")
     os.makedirs(log_save_folder, exist_ok=True)
 
     print(f"Weights will be loaded from: {load_dir}")
@@ -142,14 +162,15 @@ def main_resnet_pca():
     #### hyperparameters #####
     batch_size  = 256
     warmup_epochs=20 
-    # lr=0.00007 # best for baseline experiments
+    lr=0.00007 # best for baseline experiments
     # lr=0.0005
     # lr=0.005
     # lr=0.001
-    lr=0.01
+    # lr=0.01
 
-    n_components=2048
-    compressed_features_size=128 
+    # n_components=2048
+    compression = 8 #  [2048, 1024, 512, 256, 128, 64, 32, 16, 8]
+    # compressed_features_size=128 
     weight_decay = 2e-05
     whiten = False
     # whiten = True
@@ -157,8 +178,9 @@ def main_resnet_pca():
     # compression_level= float(compressed_features_size/n_components)
 
 
-    DEBUG_MODE = False
-    use_early_stopping=True
+    DEBUG_MODE = True
+    # DEBUG_MODE = False
+
 
     #### get data #####root, batch_size=32,num_workers=10   
     dataloadercub200 = DataLoaderCUB200(data_root, batch_size=batch_size, num_workers=10)
@@ -186,7 +208,6 @@ def main_resnet_pca():
     # print(f"You are compressing features from {n_components} dimensions to {compressed_features_size} dimensions size. Compression level is: {compression_level}")
     print(f"You are using epochs: {epochs}")
     print(f"With Learning rate: {lr}")
-    print(f"You are using early stopping: {use_early_stopping}")
     print("######"*30)
     print(f"During finetuning with the presence of a pca 'layer', max pca compression would be from 2049 to 200 which is the number of classes in cub200 dataset")
 
@@ -199,22 +220,22 @@ def main_resnet_pca():
     # 5. Return PCA
     # 6. Pass testloader through the model
     # 7. Now, train and evaluate fc layer
-    # 8. Fit the new features (generated from testLoader) to the PCA
+    # 8. THIS IS WRONG! Fit the new features (generated from testLoader) to the PCA
     # 9. Now pass these new features via the fc layer and evaluate classification performance
-
+    dataset_name = "cub200"
     # Steps 1, 2, 3, 4, and 5
-    features_extractor = load_resnet50_unmodifiedVanilla(num_classes_cub200,n_components, "cub200", batch_size, lr, load_dir)
+    features_extractor = load_resnet50_unmodifiedVanilla(num_classes_cub200, 2048, dataset_name, batch_size, lr, load_dir)  # 2048 for original features size
                         #  load_resnet50_unmodifiedVanilla(num_classes_cub200,feature_size, dataset_name, batch_size, lr, load_dir):
 
     features_extractor.feature_extractor_mode()          # to remove the last layer
     features_extractor.to(device)
     # fit the pca with the training data
-    pca, train_features = pca_fit_features(features_extractor, trainloader_cub200, n_components=num_classes_cub200, whiten=whiten, device=device)
+    pca, train_features = pca_fit_features(features_extractor, trainloader_cub200, n_components=compression, whiten=whiten, device=device)
 
     # Assert that PCA was successful
     assert pca is not None, "PCA fitting failed"
     assert hasattr(pca, 'components_'), "PCA fitting did not compute components"
-    assert pca.n_components_ <= num_classes_cub200, "PCA components exceed the specified number"
+    # assert pca.n_components_ <= num_classes_cub200, "PCA components exceed the specified number"
 
     # Now pass testloader via the feature extractor and save the results in a list
     test_features = generate_and_process_features(features_extractor, testloader_cub200, device)
@@ -234,27 +255,44 @@ def main_resnet_pca():
     if test_features.ndim != 2:
         raise ValueError(f"test_features must be 2D, got {test_features.ndim}D")
     # compress those features
-    compressed_test_featues = pca.transform(test_features)
-    compressed_trainfeatues = pca.transform(train_features)
+    compressed_test_features = pca.transform(test_features)
+    compressed_train_features = pca.transform(train_features)
 
-    print(f"Shape of compressed_test_features: {compressed_test_featues.shape}")
+    print(f"Shape of compressed_test_features: {compressed_test_features.shape}")
+    print(f"Shape of compressed_train_features: {compressed_train_features.shape}")
     # assert compressed_features_size.shape[1] == num_classes_cub200, "Size of compressed featuers MUST equal the number of classes"
 
-    # Define a new fc layer and loss
-    new_fc = nn.Linear(in_features=200, out_features=200)  # Assuming the feature size is 2048
-    init.xavier_uniform_(new_fc.weight)
 
-    criterion = nn.CrossEntropyLoss()
-    # test on classification
-    optimizer  = create_optimizer_fc(new_fc, lr, weight_decay=weight_decay)   
-    trained_fc_layer = fc_trainer(new_fc, epochs, optimizer, criterion, trainloader_cub200, testloader_cub200, compressed_trainfeatues, compressed_test_featues, device)
+    # feature_sizes = [2048, 1024, 512, 256, 128, 64, 32, 16, 8]
 
+
+    compressed_train_feature_batches = batch_features(compressed_train_features, trainloader_cub200.batch_size)
+    compressed_test_feature_batches = batch_features(compressed_test_features, testloader_cub200.batch_size)
+    
+    #retrieval
+    metrics_logger_retrieval = MetricsLogger(filepath="./logs/metrics_pca_exp.json")         
+    retrieval_metrics_cub200_pca = {}
+
+    # retrieval_metrics_cifar10 = evaluate_on_retrieval(model_cifar10, trainloader_cifar10, testloader_cifar10, batch_size, device=device)
+    retrieval_metrics_cub200_pca = evaluate_on_retrieval_pca(features_extractor, compressed_train_feature_batches, trainloader_cub200, compressed_test_feature_batches, testloader_cub200, batch_size, device)
+
+        
+    print(f"\nRetrieval metrics for CUB-200 - PCA: {retrieval_metrics_cub200_pca}")
+    metrics_logger_retrieval.log_retrieval_metrics(compression, retrieval_metrics_cub200_pca, dataset_name)
+    
+        # print(f"\nRetrieval metrics for CUB-200 against feature size: {retrieval_metrics_cub200_pca}")
+
+    print(f"Retrieval evaluation for CUB-200 with compressed feature size {compression} is complete!\n")
+    retrieval_metrics_cub200_pca[compression] = {'mAP': retrieval_metrics_cub200_pca['mAP'], 'R@1': retrieval_metrics_cub200_pca['R@1'], 
+                                    'R@5': retrieval_metrics_cub200_pca['R@5'], 'R@10': retrieval_metrics_cub200_pca['R@10']}
+    # print(f"{retrieval_metrics_cub200_pca=}")
     # TODO send logs directory
     # TODO send save directory for resnet after linear probing
     
 
     # test on retrieval
-
+    # ADD RETRIEVAL CODE
+    
     # test on retrieval with PCA
 
     # test on retrieval with PCA and whitening
