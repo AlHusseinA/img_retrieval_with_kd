@@ -55,28 +55,6 @@ def main_resnet():
             print(f"Directory {directory_path} already exists.")
 
   
- 
-      
-    
-
-    def train_and_evaluate(dataset_name, model, optimizer, scheduler, lr,
-                           criterion, trainloader, testloader, 
-                           use_early_stopping, device, num_classes, metrics_logger,
-                           epochs, feature_size, save_dir,log_save_path):
-        
-        print(f"Training with {dataset_name} dataset and feature size: {feature_size}")
-        trainer = ResnetTrainer(model, optimizer, criterion, lr, scheduler, trainloader, 
-                                testloader, feature_size, use_early_stopping,
-                                device, num_classes, log_save_path, metrics_logger, epochs=epochs, 
-                                dataset_name=dataset_name)
-        
-        model, training_loss, training_accuracy, average_validation_loss, average_validation_accuracy = trainer.train_model()
-        trainer.plot_metrics(training_loss, average_validation_loss, training_accuracy, average_validation_accuracy)
-
-        torch.save(model.state_dict(), f'{save_dir}/resnet50_feature_size_{feature_size}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth')
-        print(f"Model saved at {save_dir}/resnet50_feature_size_{feature_size}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth")
-        return model, training_loss, training_accuracy, average_validation_loss, average_validation_accuracy
-
     
     #### set device #####
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -234,8 +212,8 @@ def main_resnet():
         # results = {}
         # # retrieval_metrics_cifar10 = evaluate_on_retrieval(model_cifar10, trainloader_cifar10, testloader_cifar10, batch_size, device=device)
         # # retrieval_metrics_cub200 = evaluate_on_retrieval(model_cub200, trainloader_cub200, testloader_cub200, metrics_logger_retrieval, batch_size, device=device)
-        results = evaluate_on_retrieval_no_torchmetrics(model_cub200, trainloader_cub200, testloader_cub200, batch_size, device=device)
-        # results = evaluate_on_retrieval(model_cub200, trainloader_cub200, testloader_cub200, batch_size, device=device)
+        # results = evaluate_on_retrieval_no_torchmetrics(model_cub200, trainloader_cub200, testloader_cub200, batch_size, device=device)
+        results = evaluate_on_retrieval(model_cub200, trainloader_cub200, testloader_cub200, batch_size, device=device)
 
         
         print(f"\nRetrieval metrics for CUB-200: {results}")

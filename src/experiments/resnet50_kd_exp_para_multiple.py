@@ -43,11 +43,16 @@ from copy import deepcopy
 from torch.utils.data import Subset
 
 
-def create_optimizer_var_lr(model, lr, weight_decay):        
+def create_optimizer_var_lr(model, lr, weight_decay):
+    # Check if the model is wrapped in DataParallel
+    if isinstance(model, torch.nn.DataParallel):
+        model = model.module
+
     temp = AdamOptimizerVar(model, lr=lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+    # Now you can access model.features
     optimizer = temp.get_optimizer()
     optimizer.actual_optimizer_name = type(optimizer).__name__
-    return optimizer 
+    return optimizer
 
 def create_scheduler_cosw(optimizer, T_max=100, warmup_epochs=20, warmup_decay="cosine"):
     scheduler = CosineAnnealingLRWrapperWithWarmup(optimizer, T_max=100, warmup_epochs=20, warmup_decay="cosine")
@@ -128,19 +133,7 @@ def main_kd():
     data_root ="/media/alabutaleb/data/cub200/"
 
     load_dir_baseline = f"/home/alabutaleb/Desktop/confirmation/baselines_allsizes/weights"   
-    # load dir for all baseline weights
-    # load_dir_baseline = "/media/alabutaleb/data/resnet50_finetuned/experiment_gpu_0_all models_results_logs_graphs/weights$ "
-    # sample name:
-    """ resnet50_feature_size_2048_cub200_batchsize_256_lr_7e-05.pth,    
-        resnet50_feature_size_1024_cub200_batchsize_256_lr_7e-05.pth,
-        resnet50_feature_size_512_cub200_batchsize_256_lr_7e-05.pth,
-        resnet50_feature_size_256_cub200_batchsize_256_lr_7e-05.pth,
-        resnet50_feature_size_128_cub200_batchsize_256_lr_7e-05.pth,
-        resnet50_feature_size_64_cub200_batchsize_256_lr_7e-05.pth,
-        resnet50_feature_size_32_cub200_batchsize_256_lr_7e-05.pth,
-        resnet50_feature_size_16_cub200_batchsize_256_lr_7e-05.pth,
-        resnet50_feature_size_8_cub200_batchsize_256_lr_7e-05.pth
-        """
+
     load_dir_vanilla = f"/home/alabutaleb/Desktop/confirmation"    # "resnet50_feature_size_vanilla_cub200_batchsize_256_lr_7e.pth"
     kd_logs = f"/home/alabutaleb/Desktop/confirmation/kd_logs"
 
@@ -170,11 +163,10 @@ def main_kd():
     #### hyperparameters #####
     batch_size  = 256
     warmup_epochs=20 
+  
     lr=0.00007 # best for baseline experiments
- 
-    weight_decay = 2e-05
 
-    # compression_level= float(compressed_features_size/n_components)
+    weight_decay = 2e-05
 
 
     DEBUG_MODE = False
@@ -196,45 +188,65 @@ def main_kd():
         last_epoch = -1
     else:
         trainloader_cub200, testloader_cub200 = dataloadercub200.get_dataloaders()
-        epochs = 15 #1000
+        epochs = 1000 #1000
         T_max=int(epochs/2)
         last_epoch = -1
 
 
 
     feature_size_unmodifed = 2048
-    feature_size_student = 64
-
+    # feature_size_student = [8, 32, 64, 128, 256, 512, 1024, 2048]
+    feature_size_students = [8, 32, 64, 128, 1024]
     if DEBUG_MODE:
-        batch_size = 256    
-    # add unit test to confirm:
-    # 1. that the teacher is an unmodified resnet50 with the same number of layers as the original (no added compression)
-    # 2. That the student is indeed with the features desired
-    teacher_model = load_resnet50_unmodifiedVanilla(num_classes_cub200, feature_size_unmodifed, "cub200", batch_size, lr, load_dir_vanilla)
-    # student_model = load_resnet50_convV2(num_classes_cub200, feature_size_student, "cub200", batch_size, lr, load_dir_baseline) # if starting from finetuned weights
-    student_model = ResNet50_convV2(feature_size_student, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None) # if starting from imagenet weights
+        batch_size = 256 
 
-    if check_size(teacher_model) != 2048:
-        print(f"Feature layer size of Teacher is: {check_size(teacher_model)=}")
-        raise ValueError("The teacher model is not an unmodified resnet50") 
-    if check_size(student_model) != feature_size_student:
-        raise ValueError("The student model is not with the desired feature size")
+    for feature_size_student in feature_size_students:
+   
+        teacher_model = load_resnet50_unmodifiedVanilla(num_classes_cub200, feature_size_unmodifed, "cub200", batch_size, lr, load_dir_vanilla)
+        # student_model = load_resnet50_convV2(num_classes_cub200, feature_size_student, "cub200", batch_size, lr, load_dir_baseline) # if starting from finetuned weights
+        student_model = ResNet50_convV2(feature_size_student, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None) # if starting from imagenet weights
+
+        output_size_teacher = check_size(teacher_model)
+        output_size_student = check_size(student_model)
+        print(f"Feature layer size of Teacher is: {output_size_teacher}")
+        print(f"Feature layer size of Student is: {output_size_student}")
+
+        if output_size_teacher != 2048:
+            print(f"Feature layer size of Teacher is: {check_size(teacher_model)=}")
+            raise ValueError("The teacher model is not an unmodified resnet50") 
+        if output_size_student != feature_size_student:
+            raise ValueError("The student model is not with the desired feature size")
+
+
+        if torch.cuda.device_count() > 1:
+            print(f"Using {torch.cuda.device_count()} GPUs!")
+            teacher_model = nn.DataParallel(teacher_model)
+            student_model = nn.DataParallel(student_model)
+
+        teacher_model.to(device)
+        student_model.to(device)    
+
+        optimizer_student = create_optimizer_var_lr(student_model, lr, weight_decay)
+        scheduler_student = create_scheduler_cosw(optimizer_student, T_max, warmup_epochs=20, warmup_decay="cosine")
+        criterion = CustomCrossEntropyLoss()
+        distill_loss = DistillKL(criterion, T=3, alpha=0.65) # T=3
+        logger = MetricsLoggerKD()
+        kd_student = KnowledgeDistillationTrainer(teacher_model, student_model, criterion, distill_loss, optimizer_student, scheduler_student, logger, num_classes_cub200, log_save_folder_kd, device, use_early_stopping, temperature=3)
+        trained_student = kd_student.train(trainloader_cub200, testloader_cub200, epochs)
+
+        # def plot_performance(log_save_path, mode, student_size=None):
+
+        # plot_performance(log_save_folder_kd, mode=2, student_size=64)
+
+
+
+        # When saving the model:
+        if isinstance(student_model, torch.nn.DataParallel):
+            torch.save(student_model.module.state_dict(), f'{ks_weights_save}/KD_student_resnet50_feature_size_{feature_size_student}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth')
+        else:
+            torch.save(student_model.state_dict(), f'{ks_weights_save}/KD_student_resnet50_feature_size_{feature_size_student}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth')
+
     
-    
-
-    optimizer_student = create_optimizer_var_lr(student_model, lr, weight_decay)
-    scheduler_student = create_scheduler_cosw(optimizer_student, T_max, warmup_epochs=20, warmup_decay="cosine")
-    criterion = CustomCrossEntropyLoss()
-    distill_loss = DistillKL(criterion, T=3, alpha=0.5)
-    logger = MetricsLoggerKD()
-    kd_student = KnowledgeDistillationTrainer(teacher_model, student_model, criterion, distill_loss, optimizer_student, scheduler_student, logger, num_classes_cub200, log_save_folder_kd, device, use_early_stopping, temperature=3)
-    trained_student = kd_student.train(trainloader_cub200, testloader_cub200, epochs)
-
-    # def plot_performance(log_save_path, mode, student_size=None):
-
-    plot_performance(log_save_folder_kd, mode=2, student_size=64)
-
-    torch.save(trained_student.state_dict(), f'{ks_weights_save}/KD_student_resnet50_feature_size_{feature_size_student}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth')
     # print(f"Model saved at {ks_weights_save}/KD_student_resnet50_feature_size_{feature_size}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth")
   
   

@@ -36,6 +36,7 @@ from utils.helpers_for_pca_exp import generate_and_process_features, make_predic
 import numpy as np
 import random
 
+from copy import deepcopy
 
 # for debugging
 from torch.utils.data import Subset
@@ -105,7 +106,9 @@ def load_resnet50_unmodifiedVanilla(num_classes_cub200,feature_size, dataset_nam
     model.load_state_dict(fine_tuned_weights)
     # model.feature_extractor_mode()
     #unit test for feature size
-    testing_size = TestFeatureSize(model, feature_size) # this will confirm that the feature size is correct
+    test = deepcopy(model)
+
+    testing_size = TestFeatureSize(test, feature_size) # this will confirm that the feature size is correct
     assert model is not None, "Failed to load the model"
     try:
         testing_size.test_feature_size()
@@ -113,7 +116,7 @@ def load_resnet50_unmodifiedVanilla(num_classes_cub200,feature_size, dataset_nam
 
     except AssertionError as e:
         # add an error message to the assertion error
-        e.args += (f"Expected feature size {feature_size}, got {model.features_out.in_features}")   
+        e.args += (f"Expected feature size {feature_size}, got {test.features_out.in_features}")   
         raise e # if the feature size is not correct, raise an error
     
 
@@ -172,14 +175,14 @@ def main_resnet_pca():
     compression = 8 #  [2048, 1024, 512, 256, 128, 64, 32, 16, 8]
     # compressed_features_size=128 
     weight_decay = 2e-05
-    whiten = False
-    # whiten = True
+    # whiten = False
+    whiten = True
 
     # compression_level= float(compressed_features_size/n_components)
 
 
-    DEBUG_MODE = True
-    # DEBUG_MODE = False
+    # DEBUG_MODE = True
+    DEBUG_MODE = False
 
 
     #### get data #####root, batch_size=32,num_workers=10   
