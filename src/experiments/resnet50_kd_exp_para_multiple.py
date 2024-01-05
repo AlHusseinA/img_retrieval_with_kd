@@ -15,6 +15,7 @@ from schedulers.cosine import CosineAnnealingLRWrapper, CosineAnnealingLRWrapper
 from optimizers.adam_for_fc import AdamOptimizerFC
 # from exp_logging.metricsLogger import MetricsLogger
 from exp_logging.metricsLogger_kd import MetricsLoggerKD
+from exp_logging.metricsLogger import MetricsLogger
 from torchvision.models import resnet50, ResNet50_Weights
 from datetime import datetime
 import yaml
@@ -165,7 +166,7 @@ def main_kd():
     warmup_epochs=20 
   
     lr=0.00007 # best for baseline experiments
-
+    # lr = 0.001
     weight_decay = 2e-05
 
 
@@ -183,7 +184,7 @@ def main_kd():
         trainloader_cub200_dump, testloader_cub200_dump = dataloadercub200.get_dataloaders()
         trainloader_cub200, testloader_cub200, batch_size = create_subset_data(trainloader_cub200_dump, testloader_cub200_dump, batch_size=32)
         # trainloader_cub200, testloader_cub200, batch_size = create_subset_data2(trainloader_cub200_dump, testloader_cub200_dump, subset_ratio=0.1, batch_size=32)
-        epochs = 8
+        epochs = 25
         T_max=20
         last_epoch = -1
     else:
@@ -193,10 +194,17 @@ def main_kd():
         last_epoch = -1
 
 
+    metrics_logger_van = MetricsLogger()
+
+
 
     feature_size_unmodifed = 2048
     # feature_size_student = [8, 32, 64, 128, 256, 512, 1024, 2048]
-    feature_size_students = [8, 32, 64, 128, 1024]
+    # feature_size_students = [8, 32, 64, 128, 1024]
+    # feature_size_students = [32, 64, 1024]
+    feature_size_students = [8, 16, 128, 256, 512 ]
+    # feature_size_students = [8]
+
     if DEBUG_MODE:
         batch_size = 256 
 
@@ -229,15 +237,15 @@ def main_kd():
         optimizer_student = create_optimizer_var_lr(student_model, lr, weight_decay)
         scheduler_student = create_scheduler_cosw(optimizer_student, T_max, warmup_epochs=20, warmup_decay="cosine")
         criterion = CustomCrossEntropyLoss()
-        distill_loss = DistillKL(criterion, T=3, alpha=0.65) # T=3
+        distill_loss = DistillKL(criterion, T=1, alpha=0.5) # T=3, T=0.01, alpha=0.6
         logger = MetricsLoggerKD()
-        kd_student = KnowledgeDistillationTrainer(teacher_model, student_model, criterion, distill_loss, optimizer_student, scheduler_student, logger, num_classes_cub200, log_save_folder_kd, device, use_early_stopping, temperature=3)
+        kd_student = KnowledgeDistillationTrainer(teacher_model, student_model, criterion, distill_loss, optimizer_student, scheduler_student, logger, num_classes_cub200, lr, device, log_save_folder_kd, use_early_stopping, temperature=3)
+
         trained_student = kd_student.train(trainloader_cub200, testloader_cub200, epochs)
 
         # def plot_performance(log_save_path, mode, student_size=None):
 
-        # plot_performance(log_save_folder_kd, mode=2, student_size=64)
-
+        plot_performance(log_save_folder_kd, student_size=feature_size_student)
 
 
         # When saving the model:
@@ -246,6 +254,7 @@ def main_kd():
         else:
             torch.save(student_model.state_dict(), f'{ks_weights_save}/KD_student_resnet50_feature_size_{feature_size_student}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth')
 
+    metrics_logger_van.plot_multiple_metrics(log_save_folder_kd, feature_size_student, lr, dataset_name)
     
     # print(f"Model saved at {ks_weights_save}/KD_student_resnet50_feature_size_{feature_size}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth")
   

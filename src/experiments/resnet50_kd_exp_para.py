@@ -235,12 +235,12 @@ def main_kd():
     criterion = CustomCrossEntropyLoss()
     distill_loss = DistillKL(criterion, T=3, alpha=0.65) # T=3
     logger = MetricsLoggerKD()
-    kd_student = KnowledgeDistillationTrainer(teacher_model, student_model, criterion, distill_loss, optimizer_student, scheduler_student, logger, num_classes_cub200, log_save_folder_kd, device, use_early_stopping, temperature=3)
+    kd_student = KnowledgeDistillationTrainer(teacher_model, student_model, criterion, distill_loss, optimizer_student, scheduler_student, logger, num_classes_cub200, device, device, log_save_folder_kd, temperature=3)
     trained_student = kd_student.train(trainloader_cub200, testloader_cub200, epochs)
 
     # def plot_performance(log_save_path, mode, student_size=None):
 
-    plot_performance(log_save_folder_kd, mode=2, student_size=64)
+    plot_performance(log_save_folder_kd, student_size=feature_size_student)
 
 
 
