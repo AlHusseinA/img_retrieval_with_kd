@@ -184,7 +184,7 @@ def main_kd():
         trainloader_cub200_dump, testloader_cub200_dump = dataloadercub200.get_dataloaders()
         trainloader_cub200, testloader_cub200, batch_size = create_subset_data(trainloader_cub200_dump, testloader_cub200_dump, batch_size=32)
         # trainloader_cub200, testloader_cub200, batch_size = create_subset_data2(trainloader_cub200_dump, testloader_cub200_dump, subset_ratio=0.1, batch_size=32)
-        epochs = 25
+        epochs = 2
         T_max=20
         last_epoch = -1
     else:
@@ -199,14 +199,19 @@ def main_kd():
 
 
     feature_size_unmodifed = 2048
-    # feature_size_student = [8, 32, 64, 128, 256, 512, 1024, 2048]
+    feature_size_students = [8, 16, 32, 64, 128, 256, 512, 1024]
     # feature_size_students = [8, 32, 64, 128, 1024]
     # feature_size_students = [32, 64, 1024]
-    feature_size_students = [8, 16, 128, 256, 512 ]
+    # feature_size_students = [8, 16, 128, 256 ]
+    # feature_size_students = [32, 64, 512, 1024 ]
+
     # feature_size_students = [8]
+
 
     if DEBUG_MODE:
         batch_size = 256 
+    # Record the start time
+    start_time = datetime.now()
 
     for feature_size_student in feature_size_students:
    
@@ -237,7 +242,7 @@ def main_kd():
         optimizer_student = create_optimizer_var_lr(student_model, lr, weight_decay)
         scheduler_student = create_scheduler_cosw(optimizer_student, T_max, warmup_epochs=20, warmup_decay="cosine")
         criterion = CustomCrossEntropyLoss()
-        distill_loss = DistillKL(criterion, T=1, alpha=0.5) # T=3, T=0.01, alpha=0.6
+        distill_loss = DistillKL(criterion, T=0.075, alpha=0.5) # T=3, T=0.01, alpha=0.6
         logger = MetricsLoggerKD()
         kd_student = KnowledgeDistillationTrainer(teacher_model, student_model, criterion, distill_loss, optimizer_student, scheduler_student, logger, num_classes_cub200, lr, device, log_save_folder_kd, use_early_stopping, temperature=3)
 
@@ -249,15 +254,24 @@ def main_kd():
 
 
         # When saving the model:
-        if isinstance(student_model, torch.nn.DataParallel):
-            torch.save(student_model.module.state_dict(), f'{ks_weights_save}/KD_student_resnet50_feature_size_{feature_size_student}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth')
+        if isinstance(trained_student, torch.nn.DataParallel):
+            torch.save(trained_student.module.state_dict(), f'{ks_weights_save}/KD_student_resnet50_feature_size_{feature_size_student}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth')
         else:
-            torch.save(student_model.state_dict(), f'{ks_weights_save}/KD_student_resnet50_feature_size_{feature_size_student}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth')
+            torch.save(trained_student.state_dict(), f'{ks_weights_save}/KD_student_resnet50_feature_size_{feature_size_student}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth')
 
     metrics_logger_van.plot_multiple_metrics(log_save_folder_kd, feature_size_student, lr, dataset_name)
     
     # print(f"Model saved at {ks_weights_save}/KD_student_resnet50_feature_size_{feature_size}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth")
-  
+    
+    # Record the end time
+    end_time = datetime.now()
+
+    # Calculate the duration
+    duration = end_time - start_time
+    hours, remainder = divmod(duration.seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+
+    print(f"Total time taken: {hours} hours and {minutes} minutes.")
   
 
     # TODO send logs directory
