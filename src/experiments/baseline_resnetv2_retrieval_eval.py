@@ -29,6 +29,7 @@ import matplotlib.pyplot as plt
 # from utils.gallery import extract_gallery_features
 from utils.similarities import evaluate_on_retrieval
 from utils.similarities_no_torchmetrics import evaluate_on_retrieval_no_torchmetrics
+from utils.similarities_testloaderonly import evaluate_on_retrieval_testloaderonly
 # from utils.helper_functions import plot_multiple_metrics
 from utils.features_unittest import TestFeatureSize
 from utils.debugging_functions import create_subset_data, create_subset_data2
@@ -66,7 +67,8 @@ def main_resnet():
     #####################
     #### directory to save fine tuned weights #####
     base_directory = "/home/alabutaleb/Desktop/confirmation/"
-    data_root ="/media/alabutaleb/data/cub200/"
+    # data_root ="/media/alabutaleb/data/cub200/"
+    data_root = "/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb1/data/cub200"
 
 
     # Construct the dynamic directory path
@@ -126,7 +128,7 @@ def main_resnet():
 
     #### get data #####root, batch_size=32,num_workers=10   
     dataloadercub200 = DataLoaderCUB200(data_root, batch_size=batch_size, num_workers=10)
-    num_classes_cub200 = dataloadercub200.get_number_of_classes()
+    num_classes_cub200, label_to_name_train, label_to_name_test = dataloadercub200.get_number_of_classes()
 
     if DEBUG_MODE:
         # create small subset of data to make debuggin faster
@@ -142,6 +144,31 @@ def main_resnet():
         T_max=int(epochs/2)
         last_epoch = -1
     
+    # For total number of images
+    total_images_train = len(trainloader_cub200.dataset)
+    total_images_test = len(testloader_cub200.dataset)
+    print(f"Total images in trainloader: {total_images_train}")
+    print(f"Total images in testloader: {total_images_test}")
+    # from collections import Counter
+    # def count_images_per_class_and_check_range(dataloader):
+    #     class_counts = Counter()
+    #     for _, labels in dataloader.dataset:
+    #         if hasattr(labels, 'tolist'):
+    #             class_counts.update(labels.tolist())
+    #         else:
+    #             class_counts.update([labels])
+        
+    #     # Check if all classes have samples between 25 and 35
+    #     all_classes_in_range = all(25 <= count <= 35 for count in class_counts.values())
+    #     return all_classes_in_range
+
+    # # Usage
+    # are_all_classes_in_range_train = count_images_per_class_and_check_range(trainloader_cub200)
+    # are_all_classes_in_range_test = count_images_per_class_and_check_range(testloader_cub200)
+
+    # print("All classes in trainloader have samples between 25 and 35:", are_all_classes_in_range_train)
+    # exit("All classes in testloader have samples between 25 and 35: " + str(are_all_classes_in_range_test))
+
     #### print hyperparameters #####
     print("/\\"*30)
     print(f"Learning rate: {lr}")
@@ -161,9 +188,10 @@ def main_resnet():
     criterion = CustomCrossEntropyLoss()
 
     #### feature sizes #####
-    # feature_sizes = [2048]
+    # feature_sizes = [8]
+    feature_sizes = [2048]
     # feature_sizes = [8, 16, 32, 64, 128, 256, 512, 1024, 2048]
-    feature_sizes = [2048, 1024, 512, 256, 128, 64, 32, 16, 8]
+    # feature_sizes = [2048, 1024, 512, 256, 128, 64, 32, 16, 8]
 
 
 
@@ -212,9 +240,9 @@ def main_resnet():
         # results = {}
         # # retrieval_metrics_cifar10 = evaluate_on_retrieval(model_cifar10, trainloader_cifar10, testloader_cifar10, batch_size, device=device)
         # # retrieval_metrics_cub200 = evaluate_on_retrieval(model_cub200, trainloader_cub200, testloader_cub200, metrics_logger_retrieval, batch_size, device=device)
-        # results = evaluate_on_retrieval_no_torchmetrics(model_cub200, trainloader_cub200, testloader_cub200, batch_size, device=device)
-        results = evaluate_on_retrieval(model_cub200, trainloader_cub200, testloader_cub200, batch_size, device=device)
-
+        results = evaluate_on_retrieval_no_torchmetrics(model_cub200, trainloader_cub200, testloader_cub200, batch_size, device=device)
+        # results = evaluate_on_retrieval(model_cub200, trainloader_cub200, testloader_cub200, batch_size, device=device)
+        # results = evaluate_on_retrieval_testloaderonly(model_cub200, testloader_cub200, label_to_name_test, batch_size, device=device)
         
         print(f"\nRetrieval metrics for CUB-200: {results}")
         metrics_logger_retrieval.log_retrieval_metrics(feature_size, results, dataset_names[0])

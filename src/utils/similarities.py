@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from torch.nn import CosineSimilarity
 from exp_logging.metricsLogger import MetricsLogger
-from utils.helpers_functions_retrieval import normalize_features
+# from utils.helpers_functions_retrieval import normalize_features
 import time
 
 from tqdm import tqdm
@@ -40,9 +40,9 @@ def image_retrieval(single_query_feature, gallery_features, device=None):
     
 
 
-    # Normalize the query and gallery features to unit length
-    single_query_feature = single_query_feature / single_query_feature.norm(dim=1, keepdim=True)
-    gallery_features = gallery_features / gallery_features.norm(dim=1, keepdim=True)
+    # # Normalize the query and gallery features to unit length
+    # single_query_feature = single_query_feature / single_query_feature.norm(dim=1, keepdim=True)
+    # gallery_features = gallery_features / gallery_features.norm(dim=1, keepdim=True)
 
 
     # Create an instance of the torch.nn.CosineSimilarity class and compute cosine similarity scores
@@ -54,7 +54,7 @@ def image_retrieval(single_query_feature, gallery_features, device=None):
     gallery_features = gallery_features.to(device)   
 
     similarity_scores = cos_sim(gallery_features, single_query_feature)
-
+    # exit(f"{similarity_scores[0:50]=}")
     sorted_scores, sorted_indices = torch.sort(similarity_scores, descending=True)
 
     return similarity_scores, sorted_scores, sorted_indices
@@ -92,6 +92,7 @@ def evaluate_on_retrieval(model, trainloader, testloader, batch_size=32, shuffle
 
     Evaluate a model on image retrieval task.
     """
+
     if device==None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     else:
@@ -111,8 +112,8 @@ def evaluate_on_retrieval(model, trainloader, testloader, batch_size=32, shuffle
     # Initialize metrics
 
     model.eval()
-
-    rmap = RetrievalMAP()
+    # As per standard,we measure the model performance with mean Average Precision(mAP)at top1000(mAP@1K) for single-labeled datasets (i.e.CUB200, ImageNet1000, andCIFAR10)
+    rmap = RetrievalMAP(top_k=100)
     r1 = RetrievalRecall(top_k=1)
     r5 = RetrievalRecall(top_k=5)
     r10 = RetrievalRecall(top_k=10)    # r2 = RetrievalRecall(k=20)   # top 20
@@ -133,15 +134,19 @@ def evaluate_on_retrieval(model, trainloader, testloader, batch_size=32, shuffle
 
         with torch.inference_mode():
             # features for a batch of query images passed through the model
-            query_features = model(query_images)         
+            query_features = model(query_images)     
+       
              # and in the batch you just producd, take each image features one by one as a query and test image retrieval
             for single_query_feature, single_query_label in zip(query_features, query_labels):
                 # # because zip will turn single_query_lable to a scalar tensor
-                # sorted_scores, sorted_indices = image_retrieval(single_query_feature, gallery_features, device)   
                 # ##########################################  
                 similarity_scores2, _, _ = image_retrieval(single_query_feature, gallery_features, device)   
+                # similarity_scores2, _, _, valid_indices = image_retrieval(single_query_feature, gallery_features, gallery_labels, single_query_label, counter, device)   
+
                 ##########################################             
-                ground_truths = (gallery_labels == single_query_label).int()
+                # ground_truths = (gallery_labels == single_query_label).int()
+                ground_truths = (gallery_labels == single_query_label.unsqueeze(0)).int()
+
              
 
 

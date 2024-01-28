@@ -23,11 +23,13 @@ class GenericKDLossTrainer:
             with torch.inference_mode():
                 teacher_outputs = self.teacher_model(student_inputs)
             soft_labels = F.softmax(teacher_outputs / self.temperature, dim=1)
+
         elif self.strategy == "TAKD_kd":
             with torch.inference_mode():
                 ta_outputs = self.ta_model(student_inputs)
             soft_labels = F.softmax(ta_outputs / self.temperature, dim=1)
-        elif self.strategy == "srd":    # Semantic Representational Distillation
+
+        elif self.strategy == "srd":    # Semantic Representational Distillation (SRD)
             with torch.inference_mode():
                 exit(f"You have not coded SRD yet")
         else:
@@ -45,3 +47,5 @@ class GenericKDLossTrainer:
         return self.student_model
 
     # ... (plot_loss_vs_epoch and plot_acc_vs_epoch methods)
+
+

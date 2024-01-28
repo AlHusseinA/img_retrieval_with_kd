@@ -105,7 +105,7 @@ def evaluate_on_retrieval_pca(model, compressed_train_feature_batches, trainload
     # all_query_features = []
     model.eval()
 
-    rmap = RetrievalMAP()
+    rmap = RetrievalMAP(top_k=100)
     r1 = RetrievalRecall(top_k=1)
     r5 = RetrievalRecall(top_k=5)
     r10 = RetrievalRecall(top_k=10)    # r2 = RetrievalRecall(k=20)   # top 20

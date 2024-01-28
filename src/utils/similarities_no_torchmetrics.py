@@ -8,6 +8,33 @@ from tqdm import tqdm
 from torchmetrics.retrieval import RetrievalMAP, RetrievalRecall
 
 
+
+
+def read_image_ids(file_path):
+    """Read the image IDs from the file."""
+    image_ids = []
+    with open(file_path, 'r') as file:
+        for line in file:
+            image_id, _ = line.strip().split()
+            image_ids.append(int(image_id))
+    return image_ids
+
+def reformat_data(retrieved_indices, relevant_indices, image_ids):
+    """Reformat the data from lists to dictionaries keyed by image IDs."""
+    formatted_retrieved_indices = {}
+    formatted_relevant_indices = {}
+    for i, image_id in enumerate(image_ids):
+        formatted_retrieved_indices[image_id] = retrieved_indices[i]
+        formatted_relevant_indices[image_id] = relevant_indices[i]
+    return formatted_retrieved_indices, formatted_relevant_indices
+
+
+
+
+
+
+
+
 def image_retrieval(single_query_feature, gallery_features, device=None):
     """
     This function takes a query feature and a set of gallery features and computes the similarity scores 
@@ -111,6 +138,7 @@ def evaluate_on_retrieval_no_torchmetrics(model, trainloader, testloader, batch_
 
     query_idx_counter = 0  # Initialize a counter to keep track of query indices across batches
     
+    processed_image_ids = []
 
     counter=0
     TEST_FLAG=0
@@ -129,15 +157,53 @@ def evaluate_on_retrieval_no_torchmetrics(model, trainloader, testloader, batch_
             query_features = model(query_images)         
              # and in the batch you just producd, take each image features one by one as a query and test image retrieval
             for single_query_feature, single_query_label in zip(query_features, query_labels):
-                
+                # ##########################################
+                processed_image_ids.append(single_query_label.item())  # Assuming single_query_label is the image ID
+                # ##########################################
                 # # because zip will turn single_query_lable to a scalar tensor
                 # sorted_scores, sorted_indices = image_retrieval(single_query_feature, gallery_features, device)   
                 # ##########################################  
-                similarity_scores2, _, _ = image_retrieval(single_query_feature, gallery_features, device)  
-                _, _, sorted_indices = image_retrieval(single_query_feature, gallery_features, device)
+                # similarity_scores2, _, _ = image_retrieval(single_query_feature, gallery_features, device)  
+                similarity_scores, sorted_scores, sorted_indices = image_retrieval(single_query_feature, gallery_features, device)
+
                 relevant_indices = (gallery_labels == single_query_label).nonzero(as_tuple=True)[0]
+
                 all_retrieved_indices.append(sorted_indices.cpu().numpy())
                 all_relevant_indices.append(relevant_indices.cpu().numpy())
+                if query_idx_counter == 0:
+
+                    print(f"Query image ID: {single_query_label.item()}")
+                    print(f"\n Query image label: {single_query_label.item()}")
+                    print(f"\n Query image feature shape: {single_query_feature.shape}")
+                    print(f"\n Query image feature type: {type(single_query_feature)}")
+
+
+                    # Extract the arrays from the lists
+                    retrieved_indices_array = all_retrieved_indices[0]
+                    relevant_indices_array = all_relevant_indices[0]
+
+                    # Print the number of elements in each array
+                    print(f"\n Number of elements in all_relevant_indices and in all_retrieved_indices: {len(relevant_indices_array)} and {len(retrieved_indices_array)}")
+
+                    # To find the number of common elements correctly
+                    set_relevant_indices = set(relevant_indices_array)
+                    set_retrieved_indices = set(retrieved_indices_array)
+                    common_indices = set_relevant_indices.intersection(set_retrieved_indices)
+                    # Print the number of common elements
+                    print("Number of elements in all_relevant_indices that are also in all_retrieved_indices:", len(common_indices))
+
+                    # print(f"\n all_retrieved_indices type: {type(all_retrieved_indices)}")
+                    # print(f"\n all_retrieved_indices shape: {len(all_retrieved_indices)}")
+                    # print(f"\n all_retrieved_indices: {all_retrieved_indices}")
+                    # print(f"\n all_relevant_indices: {all_relevant_indices}")
+                    print(f"\n all_retrieved_indices[:1]: {all_retrieved_indices[:1]}")
+                    print(f"\n all_relevant_indices[:10]: {all_relevant_indices[:10]}")
+                    print(f"\n sorted_scores[:10]: {sorted_scores[:10]}")
+                    print(f"\n sorted_indices[:10]: {sorted_indices[:10]}")
+                    print(f"\n similarity_scores[:10]: {similarity_scores[:10]}")
+                    print(f"\n relevant_indices.shape:{relevant_indices.shape}")
+                    print(f"\n relevant_indices[:10]: {relevant_indices[:10]}")
+                    exit(f"\n similarity_scores[:10]: {similarity_scores[:10]}")
 
                 query_idx_counter += 1  # Increment the query index counter
 
@@ -156,13 +222,25 @@ def evaluate_on_retrieval_no_torchmetrics(model, trainloader, testloader, batch_
 
         if batch_counter % N == 0:
             print(f"Processing batch {batch_counter} of {total_batches} in this image retrieval evaluation")
+    # File path to the image_class_labels.txt
+    file_path = "/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb1/data/cub200/CUB_200_2011/image_class_labels.txt"
 
+    # Extract the image IDs
+    image_ids = read_image_ids(file_path)
+
+    # Now use 'processed_image_ids' instead of reading from the file
+    formatted_all_retrieved_indices, formatted_all_relevant_indices = reformat_data(all_retrieved_indices, all_relevant_indices, processed_image_ids)
+
+    mAP_score = mean_average_precision(formatted_all_retrieved_indices, formatted_all_relevant_indices)
+    recall_at_1 = mean_recall_at_k(formatted_all_retrieved_indices, formatted_all_relevant_indices, k=1)
+    recall_at_5 = mean_recall_at_k(formatted_all_retrieved_indices, formatted_all_relevant_indices, k=5)
+    recall_at_10 = mean_recall_at_k(formatted_all_retrieved_indices, formatted_all_relevant_indices, k=10)
 
     # Calculate mAP and R@K
-    mAP_score = mean_average_precision(all_retrieved_indices, all_relevant_indices)
-    recall_at_1 = mean_recall_at_k(all_retrieved_indices, all_relevant_indices, k=1)
-    recall_at_5 = mean_recall_at_k(all_retrieved_indices, all_relevant_indices, k=5)
-    recall_at_10 = mean_recall_at_k(all_retrieved_indices, all_relevant_indices, k=10)
+    # mAP_score = mean_average_precision(all_retrieved_indices, all_relevant_indices)
+    # recall_at_1 = mean_recall_at_k(all_retrieved_indices, all_relevant_indices, k=1)
+    # recall_at_5 = mean_recall_at_k(all_retrieved_indices, all_relevant_indices, k=5)
+    # recall_at_10 = mean_recall_at_k(all_retrieved_indices, all_relevant_indices, k=10)
 
     metrics = {
         'mAP': mAP_score,

@@ -19,87 +19,127 @@ class MetricsLogger:
         # self.dataset_names = dataset_names
 
 
-    
-    def plot_multiple_metrics(self,log_save_path, feature_size, lr, dataset_name):
-        # Create a cycle iterator for colors
-        colors = cycle(plt.rcParams['axes.prop_cycle'].by_key()['color'])
+
+
+    def plot_multiple_metrics(self, log_save_path, feature_size_student, lr, dataset_name, T):
         folder_path = f"{log_save_path}"
-        
-        # Initialize plots
-        plt.figure(figsize=(18, 6))
-        
-        # Subplot for accuracy
-        plt.subplot(1, 2, 1)
-        plt.xlabel('Epochs')
-        plt.ylabel('Accuracy')
-        plt.title('Training and Validation Accuracy')
-        
-        # Subplot for loss
-        plt.subplot(1, 2, 2)
-        plt.xlabel('Epochs')
-        plt.ylabel('Loss')
-        plt.title('Training and Validation Loss')
-        
-        # Loop over each JSON file in the folder to read and plot data
+
+        # Loop over each JSON file in the folder
         for filename in os.listdir(folder_path):
             if filename.endswith(".json"):
                 json_file_path = os.path.join(folder_path, filename)
-                color = next(colors)  # Get the next color in the cycle
-                
-                # Step 1: Read the JSON file into a Python dictionary
+
                 with open(json_file_path, 'r') as file:
                     data = json.load(file)
-                
-                # Step 2: Data Preparation
+
                 epochs = data['epochs']
                 train_acc = data['train_acc']
                 val_acc = data['val_acc']
                 train_loss = data['train_loss']
                 val_loss = data['val_loss']
-                
-                # Step 3: Plotting
-                
+
                 # Plot Training and Validation Accuracy
-                plt.subplot(1, 2, 1)
-                plt.plot(epochs, train_acc, label=f'Training Accuracy: {filename}', color=color)
-                plt.plot(epochs, val_acc, '--', label=f'Validation Accuracy: {filename}', color=color)
-                
+                plt.figure(figsize=(20, 12))
+                plt.plot(epochs, train_acc, label='Training Accuracy', color='blue')
+                plt.plot(epochs, val_acc, '--', label='Validation Accuracy', color='orange')
+                plt.xlabel('Epochs')
+                plt.ylabel('Accuracy')
+                plt.title(f'{filename} - Accuracy')
+                plt.legend(loc='upper left')
+                # Save Accuracy plot
+                accuracy_plot_path = os.path.join(folder_path, f"Temperature_{T}_{filename.replace('.json', '')}_accuracy.png")
+                plt.savefig(accuracy_plot_path)
+                plt.close()
+
                 # Plot Training and Validation Loss
-                plt.subplot(1, 2, 2)
-                plt.plot(epochs, train_loss, label=f'Training Loss: {filename}', color=color)
-                plt.plot(epochs, val_loss, '--', label=f'Validation Loss: {filename}', color=color)
+                plt.figure(figsize=(20, 12))
+                plt.plot(epochs, train_loss, label='Training Loss', color='blue')
+                plt.plot(epochs, val_loss, '--', label='Validation Loss', color='orange')
+                plt.xlabel('Epochs')
+                plt.ylabel('Loss')
+                plt.title(f'{filename} - Loss')
+                plt.legend(loc='upper left')
+                # Save Loss plot
+                loss_plot_path = os.path.join(folder_path, f"Temperature_{T}_{filename.replace('.json', '')}_loss.png")
+                plt.savefig(loss_plot_path)
+                plt.close()
+
+
         
-        # Show legends
-        plt.subplot(1, 2, 1)
-        plt.legend(loc='upper left')
-        plt.subplot(1, 2, 2)
-        plt.legend(loc='upper left')
+    # def plot_multiple_metrics(self,log_save_path, feature_size, lr, dataset_name):
+    #     # Create a cycle iterator for colors
+    #     colors = cycle(plt.rcParams['axes.prop_cycle'].by_key()['color'])
+    #     folder_path = f"{log_save_path}"
         
-        plt.tight_layout()
-        plt.show()
-
-
-
-
-    def log_metrics(self, feature_size, epoch, training_loss, train_acc, avg_val_loss, val_acc, dataset_name, log_save_path,lr):
-    # def log_metrics(self, feature_size, epoch, training_loss, train_acc, avg_val_loss, val_acc, batch_accuracies, dataset_name):
-
-        if feature_size not in self.data:
-            self.data[feature_size] = {'epochs': [], 'train_loss': [], 'val_loss': [], 'train_acc': [], 'val_acc': []} #, 'batch_accuracies': []}
+    #     # Initialize plots
+    #     plt.figure(figsize=(20, 8))
         
-        self.data[feature_size]['epochs'].append(epoch)
-        self.data[feature_size]['train_loss'].append(training_loss)
-        self.data[feature_size]['val_loss'].append(avg_val_loss)
-        self.data[feature_size]['train_acc'].append(train_acc)
-        self.data[feature_size]['val_acc'].append(val_acc)
-        # self.data[feature_size]['batch_accuracies'].append(batch_accuracies)
-        # Save to JSON, using feature size and dataset name as part of the file name
+    #     # Subplot for accuracy
+    #     plt.subplot(1, 2, 1)
+    #     plt.xlabel('Epochs')
+    #     plt.ylabel('Accuracy')
+    #     plt.title('Training and Validation Accuracy')
         
-        # json_file_path = f"./logs/classification_metrics_{feature_size}_{dataset_name}.json"
-        json_file_path = f"{log_save_path}/classification_metrics_lr_{lr}_feature_size_{feature_size}_{dataset_name}.json"
+    #     # Subplot for loss
+    #     plt.subplot(1, 2, 2)
+    #     plt.xlabel('Epochs')
+    #     plt.ylabel('Loss')
+    #     plt.title('Training and Validation Loss')
+        
+    #     # Loop over each JSON file in the folder to read and plot data
+    #     for filename in os.listdir(folder_path):
+    #         if filename.endswith(".json"):
+    #             json_file_path = os.path.join(folder_path, filename)
+    #             color = next(colors)  # Get the next color in the cycle
+                
+    #             # Step 1: Read the JSON file into a Python dictionary
+    #             with open(json_file_path, 'r') as file:
+    #                 data = json.load(file)
+                
+    #             # Step 2: Data Preparation
+    #             epochs = data['epochs']
+    #             train_acc = data['train_acc']
+    #             val_acc = data['val_acc']
+    #             train_loss = data['train_loss']
+    #             val_loss = data['val_loss']
+                
+    #             # Step 3: Plotting
+                
+    #             # Plot Training and Validation Accuracy
+    #             plt.subplot(1, 2, 1)
+    #             plt.plot(epochs, train_acc, label=f'Training Accuracy: {filename}', color=color)
+    #             plt.plot(epochs, val_acc, '--', label=f'Validation Accuracy: {filename}', color=color)
+                
+    #             # Plot Training and Validation Loss
+    #             plt.subplot(1, 2, 2)
+    #             plt.plot(epochs, train_loss, label=f'Training Loss: {filename}', color=color)
+    #             plt.plot(epochs, val_loss, '--', label=f'Validation Loss: {filename}', color=color)
+        
+    #     # Show legends
+    #     plt.subplot(1, 2, 1)
+    #     plt.legend(loc='upper left')
+    #     plt.subplot(1, 2, 2)
+    #     plt.legend(loc='upper left')
+        
+    #     plt.tight_layout()
+    #     # plt.show()
 
+
+
+    def log_metrics(self, student_size, epoch, training_loss, train_acc, avg_val_loss, val_acc, dataset_name, log_save_path, lr):
+        if student_size not in self.data:
+            self.data[student_size] = {'epochs': [], 'train_loss': [], 'val_loss': [], 'train_acc': [], 'val_acc': []}
+
+        self.data[student_size]['epochs'].append(epoch)
+        self.data[student_size]['train_loss'].append(training_loss)
+        self.data[student_size]['val_loss'].append(avg_val_loss)
+        self.data[student_size]['train_acc'].append(train_acc)
+        self.data[student_size]['val_acc'].append(val_acc)
+
+        json_file_path = f"{log_save_path}/classification_metrics_lr_{lr}_student_size_{student_size}_{dataset_name}.json"
+        
         with open(json_file_path, 'w') as file:
-            json.dump(self.data[feature_size], file)
+            json.dump(self.data[student_size], file)
 
     def log_retrieval_metrics(self, feature_size, metrics, dataset_name):
         # Consistency check
@@ -139,7 +179,7 @@ class MetricsLogger:
         plt.ylabel('Loss')
         plt.legend()
         plt.title(f'Metrics by Epoch for feature size {feature_size}')
-        plt.show()
+        # plt.show()
         plt.savefig(f"Loss_{plot_id}_from_logger.png")
         self.plot_metrics_by_feature_size()
         self.save_metrics(self.filepath)
@@ -155,7 +195,7 @@ class MetricsLogger:
         plt.xlabel('Feature Size')
         plt.ylabel(metric)
         plt.title(f'{metric} by Feature Size')
-        plt.show()       
+        # plt.show()       
         plt.savefig(f"{metric}_{plot_id}_from_logger.png")   
 
   

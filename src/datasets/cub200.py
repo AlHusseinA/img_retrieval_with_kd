@@ -54,6 +54,7 @@ class Cub2011(Dataset):
                 targets.append(img_labels[i])
 
         return data, targets, class_names
+    
     def get_number_of_classes(self):
         return len(self.classes)
 
@@ -73,7 +74,13 @@ class Cub2011(Dataset):
     #             return False
     #     return True
 
+    def get_label_to_name_mapping(self):
+        """
+        Creates a dictionary mapping from numeric labels to class names. This will be used to generate figures for the retrieved results
+        """
+        label_to_name = {i: name for i, name in enumerate(self.classes)}
 
+        return label_to_name
 
 
     def _download(self):

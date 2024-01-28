@@ -87,7 +87,11 @@ class DataLoaderCUB200:
     # In your DataLoaderCUB200 class
     def get_number_of_classes(self):
         # Assuming that the number of classes is the same in both train and test datasets
-        return self.train_dataset.get_number_of_classes()
+        # Get the label to name mapping
+        self.label_to_name_train = self.train_dataset.get_label_to_name_mapping()
+        self.label_to_name_test = self.test_dataset.get_label_to_name_mapping()
+
+        return self.train_dataset.get_number_of_classes(), self.label_to_name_train, self.label_to_name_test
 
 
     def get_dataloaders(self):

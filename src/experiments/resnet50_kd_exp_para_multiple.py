@@ -131,7 +131,8 @@ def main_kd():
     print(f"Device name: {torch.cuda.get_device_name()}")
     #####################
     ###### prep directories ######
-    data_root ="/media/alabutaleb/data/cub200/"
+    # data_root ="/media/alabutaleb/data/cub200/"
+    data_root = "/media/alabutaleb/09d46f11-3ed1-40ce-9868-932a0133f8bb1/data/cub200"
 
     load_dir_baseline = f"/home/alabutaleb/Desktop/confirmation/baselines_allsizes/weights"   
 
@@ -141,7 +142,7 @@ def main_kd():
     ks_weights_save = f"/home/alabutaleb/Desktop/confirmation/kd_weights"
     # log_save_path = f"/home/alabutaleb/Desktop/confirmation/"
     log_save_folder_kd = os.path.join(kd_logs, f"logs_gpu_{gpu_id}")
-    ks_weights_save = os.path.join(ks_weights_save, f"logs_gpu_{gpu_id}")
+    # ks_weights_save = os.path.join(ks_weights_save, f"logs_gpu_{gpu_id}")
 
     os.makedirs(log_save_folder_kd, exist_ok=True)
     os.makedirs(ks_weights_save, exist_ok=True)
@@ -169,15 +170,23 @@ def main_kd():
     # lr = 0.001
     weight_decay = 2e-05
 
-
+    # PARALLEL_MODE = True
+    PARALLEL_MODE = False
     DEBUG_MODE = False
     # DEBUG_MODE = True
 
-    use_early_stopping=True
+    print(f"###"*30)
+    print(f"You are in DEBUG_MODE: {DEBUG_MODE}")
+    print(f"You are in PARALLEL_MODE: {PARALLEL_MODE}")
+    print(f"###"*30)
+
+    # use_early_stopping=True
+    use_early_stopping=False
+
 
     #### get data #####root, batch_size=32,num_workers=10   
     dataloadercub200 = DataLoaderCUB200(data_root, batch_size=batch_size, num_workers=10)
-    num_classes_cub200 = dataloadercub200.get_number_of_classes()
+    num_classes_cub200, label_to_name_train, label_to_name_test = dataloadercub200.get_number_of_classes()
 
     if DEBUG_MODE:
         # create small subset of data to make debugging faster
@@ -190,22 +199,19 @@ def main_kd():
     else:
         trainloader_cub200, testloader_cub200 = dataloadercub200.get_dataloaders()
         epochs = 1000 #1000
+        # epochs = 10
         T_max=int(epochs/2)
         last_epoch = -1
 
-
-    metrics_logger_van = MetricsLogger()
-
-
+    # metrics_logger_van = MetricsLogger()
 
     feature_size_unmodifed = 2048
-    feature_size_students = [8, 16, 32, 64, 128, 256, 512, 1024]
+    # feature_size_students = [8, 16, 32, 64, 128, 256, 512, 1024]
     # feature_size_students = [8, 32, 64, 128, 1024]
     # feature_size_students = [32, 64, 1024]
-    # feature_size_students = [8, 16, 128, 256 ]
+    # feature_size_students = [8, 32, 128, 512]
     # feature_size_students = [32, 64, 512, 1024 ]
-
-    # feature_size_students = [8]
+    feature_size_students = [8, 16, 32]
 
 
     if DEBUG_MODE:
@@ -213,67 +219,92 @@ def main_kd():
     # Record the start time
     start_time = datetime.now()
 
-    for feature_size_student in feature_size_students:
-   
-        teacher_model = load_resnet50_unmodifiedVanilla(num_classes_cub200, feature_size_unmodifed, "cub200", batch_size, lr, load_dir_vanilla)
-        # student_model = load_resnet50_convV2(num_classes_cub200, feature_size_student, "cub200", batch_size, lr, load_dir_baseline) # if starting from finetuned weights
-        student_model = ResNet50_convV2(feature_size_student, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None) # if starting from imagenet weights
+    # T=0.0854
+    T1=0.05
+    T2=0.05
+    step = 0.2
 
-        output_size_teacher = check_size(teacher_model)
-        output_size_student = check_size(student_model)
-        print(f"Feature layer size of Teacher is: {output_size_teacher}")
-        print(f"Feature layer size of Student is: {output_size_student}")
+    Tx = [0.05]
+    # for T in np.arange(T1, T2, step):
+    for T in Tx:
 
-        if output_size_teacher != 2048:
-            print(f"Feature layer size of Teacher is: {check_size(teacher_model)=}")
-            raise ValueError("The teacher model is not an unmodified resnet50") 
-        if output_size_student != feature_size_student:
-            raise ValueError("The student model is not with the desired feature size")
+        metrics_logger_van = MetricsLogger()
+        ks_weights = os.path.join(ks_weights_save, f"temperature_{T}")
+        os.makedirs(ks_weights, exist_ok=True)
 
 
-        if torch.cuda.device_count() > 1:
-            print(f"Using {torch.cuda.device_count()} GPUs!")
-            teacher_model = nn.DataParallel(teacher_model)
-            student_model = nn.DataParallel(student_model)
+        log_save_folder_kd = os.path.join(kd_logs, f"logs_temperature_{T}_sizes_{feature_size_students}")
+        os.makedirs(log_save_folder_kd, exist_ok=True)
 
-        teacher_model.to(device)
-        student_model.to(device)    
-
-        optimizer_student = create_optimizer_var_lr(student_model, lr, weight_decay)
-        scheduler_student = create_scheduler_cosw(optimizer_student, T_max, warmup_epochs=20, warmup_decay="cosine")
-        criterion = CustomCrossEntropyLoss()
-        distill_loss = DistillKL(criterion, T=0.075, alpha=0.5) # T=3, T=0.01, alpha=0.6
-        logger = MetricsLoggerKD()
-        kd_student = KnowledgeDistillationTrainer(teacher_model, student_model, criterion, distill_loss, optimizer_student, scheduler_student, logger, num_classes_cub200, lr, device, log_save_folder_kd, use_early_stopping, temperature=3)
-
-        trained_student = kd_student.train(trainloader_cub200, testloader_cub200, epochs)
-
-        # def plot_performance(log_save_path, mode, student_size=None):
-
-        plot_performance(log_save_folder_kd, student_size=feature_size_student)
-
-
-        # When saving the model:
-        if isinstance(trained_student, torch.nn.DataParallel):
-            torch.save(trained_student.module.state_dict(), f'{ks_weights_save}/KD_student_resnet50_feature_size_{feature_size_student}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth')
-        else:
-            torch.save(trained_student.state_dict(), f'{ks_weights_save}/KD_student_resnet50_feature_size_{feature_size_student}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth')
-
-    metrics_logger_van.plot_multiple_metrics(log_save_folder_kd, feature_size_student, lr, dataset_name)
+        for feature_size_student in feature_size_students:
     
-    # print(f"Model saved at {ks_weights_save}/KD_student_resnet50_feature_size_{feature_size}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth")
+            teacher_model = load_resnet50_unmodifiedVanilla(num_classes_cub200, feature_size_unmodifed, "cub200", batch_size, lr, load_dir_vanilla)
+            # student_model = load_resnet50_convV2(num_classes_cub200, feature_size_student, "cub200", batch_size, lr, load_dir_baseline) # if starting from finetuned weights
+            student_model = ResNet50_convV2(feature_size_student, num_classes_cub200, weights=ResNet50_Weights.DEFAULT, pretrained_weights=None) # if starting from imagenet weights
+
+            output_size_teacher = check_size(teacher_model)
+            output_size_student = check_size(student_model)
+            print(f"Feature layer size of Teacher is: {output_size_teacher}")
+            print(f"Feature layer size of Student is: {output_size_student}")
+            print(f"###"*30)    
+            print(f"Experiments now for temperature T = {T} for models sizes: {feature_size_students}")
+            print(f"###"*30)
+            if output_size_teacher != 2048:
+                print(f"Feature layer size of Teacher is: {check_size(teacher_model)=}")
+                raise ValueError("The teacher model is not an unmodified resnet50") 
+            if output_size_student != feature_size_student:
+                raise ValueError("The student model is not with the desired feature size")
+
+
+            if PARALLEL_MODE and torch.cuda.device_count() > 1:
+                print(f"Using {torch.cuda.device_count()} GPUs!")
+                teacher_model = nn.DataParallel(teacher_model)
+                student_model = nn.DataParallel(student_model)
+
+            
+            teacher_model.to(device)
+            student_model.to(device)    
+
+            optimizer_student = create_optimizer_var_lr(student_model, lr, weight_decay)
+            scheduler_student = create_scheduler_cosw(optimizer_student, T_max, warmup_epochs=20, warmup_decay="cosine")
+            criterion = CustomCrossEntropyLoss()
+            distill_loss = DistillKL(criterion, T, alpha=0.5) # T=3, T=0.01, alpha=0.6
+            logger = MetricsLoggerKD()
+            kd_student = KnowledgeDistillationTrainer(teacher_model, student_model, criterion, distill_loss, optimizer_student, scheduler_student, logger, num_classes_cub200, lr, device, log_save_folder_kd, use_early_stopping, T)
+
+            trained_student = kd_student.train(trainloader_cub200, testloader_cub200, epochs)
+
+            # def plot_performance(log_save_path, mode, student_size=None):
+
+            plot_performance(log_save_folder_kd, T, student_size=feature_size_student)
+
+
+            # ensure_directory_exists(ks_weights)
+            # When saving the model:
+            if PARALLEL_MODE and isinstance(trained_student, torch.nn.DataParallel):
+                torch.save(trained_student.module.state_dict(), f'{ks_weights}/KD_student_resnet50_temperature_{T}_feature_size_{feature_size_student}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth')
+            else:
+                torch.save(trained_student.state_dict(), f'{ks_weights}/KD_student_resnet50_temperature_{T}_feature_size_{feature_size_student}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth')
+
+        metrics_logger_van.plot_multiple_metrics(log_save_folder_kd, feature_size_student, lr, dataset_name, T)
+
+    # print(f"Model saved at {ks_weights}/KD_student_resnet50_feature_size_{feature_size}_{dataset_name}_batchsize_{batch_size}_lr_{lr}.pth")
     
     # Record the end time
     end_time = datetime.now()
-
-    # Calculate the duration
     duration = end_time - start_time
-    hours, remainder = divmod(duration.seconds, 3600)
+    days = duration.days
+    # Calculate hours, minutes, and seconds from the remainder
+    # The total_seconds method is used to get the duration in seconds as a float,
+    # from which the number of whole days (in seconds) is subtracted
+    seconds = duration.total_seconds() - (days * 24 * 3600)
+    hours, remainder = divmod(int(seconds), 3600)
     minutes, seconds = divmod(remainder, 60)
 
-    print(f"Total time taken: {hours} hours and {minutes} minutes.")
-  
-
+    # Print the duration in a formatted string
+    print(f"%%%%"*30)
+    print(f"Duration: {days} days, {hours} hours, {minutes} minutes, {seconds} seconds")  
+    print(f"%%%%"*30)
     # TODO send logs directory
     # TODO send save directory for resnet after linear probing
  

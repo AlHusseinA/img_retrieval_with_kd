@@ -146,9 +146,9 @@ def main_resnet_pca():
     load_dir = f"/home/alabutaleb/Desktop/confirmation"    
     # pca_weights = f"/home/alabutaleb/Desktop/confirmation/pca_weights"
     # ensure_directory_exists(pca_weights)
-    pca_retrieval_logs = f"/home/alabutaleb/Desktop/confirmation/pca_retrieval_logs"
+    log_save_folder = f"/home/alabutaleb/Desktop/confirmation/pca/pca_retrieval_logs"
     # log_save_path = f"/home/alabutaleb/Desktop/confirmation/"
-    log_save_folder = os.path.join(pca_retrieval_logs, f"logs_gpu_{gpu_id}")
+    # log_save_folder = os.path.join(pca_retrieval_logs, f"logs_gpu_{gpu_id}")
     os.makedirs(log_save_folder, exist_ok=True)
 
     print(f"Weights will be loaded from: {load_dir}")
@@ -188,18 +188,19 @@ def main_resnet_pca():
     #### get data #####root, batch_size=32,num_workers=10   
     dataloadercub200 = DataLoaderCUB200(data_root, batch_size=batch_size, num_workers=10)
     num_classes_cub200 = dataloadercub200.get_number_of_classes()
-
+    
     if DEBUG_MODE:
-        # Beware that if in debug_mode then batch size will always be 32
         # create small subset of data to make debugging faster
         trainloader_cub200_dump, testloader_cub200_dump = dataloadercub200.get_dataloaders()
         trainloader_cub200, testloader_cub200, batch_size = create_subset_data(trainloader_cub200_dump, testloader_cub200_dump, batch_size=32)
-        epochs = 5
-        T_max=int(epochs/2)
+        # trainloader_cub200, testloader_cub200, batch_size = create_subset_data2(trainloader_cub200_dump, testloader_cub200_dump, subset_ratio=0.1, batch_size=32)
+        epochs = 2
+        T_max=20
         last_epoch = -1
     else:
         trainloader_cub200, testloader_cub200 = dataloadercub200.get_dataloaders()
-        epochs = 40
+        epochs = 1000 #1000
+        # epochs = 10
         T_max=int(epochs/2)
         last_epoch = -1
 

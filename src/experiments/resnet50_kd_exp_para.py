@@ -176,7 +176,7 @@ def main_kd():
 
     #### get data #####root, batch_size=32,num_workers=10   
     dataloadercub200 = DataLoaderCUB200(data_root, batch_size=batch_size, num_workers=10)
-    num_classes_cub200 = dataloadercub200.get_number_of_classes()
+    num_classes_cub200, label_to_name_train, label_to_name_test = dataloadercub200.get_number_of_classes()
 
     if DEBUG_MODE:
         # create small subset of data to make debugging faster
